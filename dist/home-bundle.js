@@ -9496,7 +9496,7 @@ var Movies = exports.Movies = function (_React$Component) {
     value: function format(movie, i) {
       return _react2.default.createElement(
         "div",
-        { key: i, className: "movie", style: { float: "left" } },
+        { key: i, className: "movie", style: { float: "left", borderRadius: "8px", overflow: "hidden" } },
         _react2.default.createElement("img", { src: "https://image.tmdb.org/t/p/w300" + movie.image_url, width: "300" }),
         _react2.default.createElement(
           "pre",
@@ -22285,7 +22285,8 @@ var Home = function (_React$Component) {
 
     _this.state = {
       movies: [],
-      user: {}
+      user: {},
+      loggedIn: false
     };
     return _this;
   }
@@ -22293,7 +22294,20 @@ var Home = function (_React$Component) {
   _createClass(Home, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
+      this.fetchUser();
       this.fetchMovies();
+    }
+  }, {
+    key: 'fetchUser',
+    value: function fetchUser() {
+      fetch('/me', { credentials: 'include' }).then(function (res) {
+        return res.json();
+      }).then(function (json) {
+        if (!json.noUser) {
+          this.setState({ loggedIn: true });
+          this.setState({ user: json });
+        }
+      }.bind(this));
     }
   }, {
     key: 'fetchMovies',
@@ -22307,13 +22321,38 @@ var Home = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
+
+      var loginButton = _react2.default.createElement(
+        'a',
+        { href: '/login' },
+        'Login with Twitter'
+      );
+      var userButton = null;
+      if (this.state.loggedIn) {
+        userButton = _react2.default.createElement(
+          'a',
+          { href: "/user/" + this.state.user.username },
+          this.state.user.username,
+          ' / '
+        );
+      }
+
+      if (this.state.loggedIn) {
+        loginButton = _react2.default.createElement(
+          'a',
+          { href: '/logout' },
+          'Logout'
+        );
+      }
+
       return _react2.default.createElement(
         'div',
         null,
         _react2.default.createElement(
-          'a',
-          { href: '/login' },
-          'Login with Twitter'
+          'div',
+          { style: { float: "right" } },
+          userButton,
+          loginButton
         ),
         _react2.default.createElement(
           'h1',
@@ -22354,8 +22393,7 @@ var Test = function (_React$Component2) {
 _reactDom2.default.render(_react2.default.createElement(
   _reactRouter.Router,
   { history: _reactRouter.browserHistory },
-  _react2.default.createElement(_reactRouter.Route, { path: '/', component: Home }),
-  _react2.default.createElement(_reactRouter.Route, { path: '/tester', component: Test })
+  _react2.default.createElement(_reactRouter.Route, { path: '/', component: Home })
 ), document.getElementById('root'));
 
 /***/ }),

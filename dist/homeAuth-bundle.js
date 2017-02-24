@@ -9496,7 +9496,7 @@ var Movies = exports.Movies = function (_React$Component) {
     value: function format(movie, i) {
       return _react2.default.createElement(
         "div",
-        { key: i, className: "movie", style: { float: "left" } },
+        { key: i, className: "movie", style: { float: "left", borderRadius: "8px", overflow: "hidden" } },
         _react2.default.createElement("img", { src: "https://image.tmdb.org/t/p/w300" + movie.image_url, width: "300" }),
         _react2.default.createElement(
           "pre",

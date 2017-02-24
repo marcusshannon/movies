@@ -82,7 +82,7 @@ app.get('/me', function(req, res) {
     res.send(req.user);
   }
   else {
-    res.send({});
+    res.send({noUser: true});
   }
 })
 
@@ -125,6 +125,7 @@ app.get('/movies', function(req, res) {
   });
 });
 
+
 app.get('/me/movies', function(req, res) {
   if (req.user) {
     knex.raw('Select * from movie where id in (SELECT movie from watched where user = ?)', [req.user.id])
@@ -158,11 +159,7 @@ app.get('/user/:username/movies', function(req, res) {
 });
 
 app.get('/', function(req, res) {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'homeAuth.html'));
-  } else {
-    res.sendFile(path.join(__dirname, 'home.html'));
-  }
+  res.sendFile(path.join(__dirname, 'home.html'));
 });
 
 app.listen(process.env.PORT || 3000);

@@ -9,12 +9,27 @@ class Home extends React.Component {
     super(props);
     this.state = {
       movies: [],
-      user: {}
+      user: {},
+      loggedIn: false
     };
   }
 
   componentDidMount() {
+    this.fetchUser();
     this.fetchMovies();
+  }
+
+  fetchUser() {
+    fetch('/me', {credentials: 'include'})
+    .then(function(res) {
+      return res.json()
+    })
+    .then(function(json) {
+      if (!json.noUser) {
+        this.setState({loggedIn: true});
+        this.setState({user: json});
+      }
+    }.bind(this));
   }
 
   fetchMovies() {
@@ -28,9 +43,23 @@ class Home extends React.Component {
   }
 
   render() {
+
+    var loginButton = <a href="/login">Login with Twitter</a>
+    var userButton = null;
+    if (this.state.loggedIn) {
+      userButton = <a href={"/user/"+this.state.user.username}>{this.state.user.username} / </a>
+    }
+
+    if (this.state.loggedIn) {
+      loginButton = <a href="/logout">Logout</a>
+    }
+
     return (
       <div>
-        <a href="/login">Login with Twitter</a>
+        <div style={{float: "right"}}>
+          {userButton}
+          {loginButton}
+        </div>
         <h1>Recently Added</h1>
         <Movies movies={this.state.movies}/>
       </div>
@@ -47,7 +76,6 @@ class Test extends React.Component {
 ReactDOM.render(
   <Router history={browserHistory}>
     <Route path="/" component={Home}/>
-    <Route path='/tester' component={Test}/>
   </Router>,
   document.getElementById('root')
 );
