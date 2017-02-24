@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 182);
+/******/ 	return __webpack_require__(__webpack_require__.s = 183);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -22364,7 +22364,8 @@ var Search = exports.Search = function (_React$Component) {
 /***/ }),
 /* 180 */,
 /* 181 */,
-/* 182 */
+/* 182 */,
+/* 183 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22416,7 +22417,7 @@ var User = function (_React$Component) {
   }, {
     key: 'fetchMovies',
     value: function fetchMovies() {
-      fetch('/user/marcusshannon/movies').then(function (res) {
+      fetch('/me/movies', { credentials: 'include' }).then(function (res) {
         return res.json();
       }).then(function (json) {
         this.setState({ movies: json });
@@ -22428,7 +22429,8 @@ var User = function (_React$Component) {
       return _react2.default.createElement(
         'div',
         null,
-        _react2.default.createElement(_movies.Movies, { movies: this.state.movies })
+        _react2.default.createElement(_movies.Movies, { movies: this.state.movies }),
+        _react2.default.createElement(_search.Search, null)
       );
     }
   }]);

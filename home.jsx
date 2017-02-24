@@ -1,13 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {Movies} from './movies.jsx'
+import { Router, Route, Link, browserHistory } from 'react-router'
 import 'whatwg-fetch'
 
 class Home extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      movies: []
+      movies: [],
+      user: {}
     };
   }
 
@@ -36,7 +38,16 @@ class Home extends React.Component {
   }
 }
 
+class Test extends React.Component {
+  render() {
+    return <h1>Hello World!</h1>
+  }
+}
+
 ReactDOM.render(
-  <Home/>,
+  <Router history={browserHistory}>
+    <Route path="/" component={Home}/>
+    <Route path='/tester' component={Test}/>
+  </Router>,
   document.getElementById('root')
 );

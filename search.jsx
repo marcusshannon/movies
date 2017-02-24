@@ -34,6 +34,20 @@ export class Search extends React.Component {
 
   addMovie(movie) {
     console.log(movie)
+    fetch('/me/movies', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(movie)
+    })
+    .then(function(res) {
+      return res.text();
+    })
+    .then(function(text) {
+      console.log(text);
+    })
   }
 
   format(movie, i) {

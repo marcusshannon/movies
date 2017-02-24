@@ -17,7 +17,7 @@ class User extends React.Component {
   }
 
   fetchMovies() {
-    fetch('/user/marcusshannon/movies')
+    fetch('/me/movies', {credentials: 'include'})
     .then(function(res) {
       return res.json();
     })
@@ -31,6 +31,7 @@ class User extends React.Component {
     return (
       <div>
         <Movies movies={this.state.movies}/>
+        <Search/>
       </div>
     );
   }

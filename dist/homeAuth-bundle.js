@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 182);
+/******/ 	return __webpack_require__(__webpack_require__.s = 181);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -22244,127 +22244,9 @@ module.exports = traverseAllChildren;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 179 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Search = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(31);
-
-var _react2 = _interopRequireDefault(_react);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var Search = exports.Search = function (_React$Component) {
-  _inherits(Search, _React$Component);
-
-  function Search(props) {
-    _classCallCheck(this, Search);
-
-    var _this = _possibleConstructorReturn(this, (Search.__proto__ || Object.getPrototypeOf(Search)).call(this, props));
-
-    _this.state = {
-      searchResults: []
-    };
-    _this.handleChange = _this.handleChange.bind(_this);
-    _this.search = _this.search.bind(_this);
-    _this.handleEnter = _this.handleEnter.bind(_this);
-    _this.format = _this.format.bind(_this);
-    return _this;
-  }
-
-  _createClass(Search, [{
-    key: 'search',
-    value: function search() {
-      fetch('https://api.themoviedb.org/3/search/movie?api_key=0060a18df5b498aebed8aa1d2da9c9e6&query=' + this.state.search).then(function (res) {
-        return res.json();
-      }).then(function (json) {
-        this.setState({ searchResults: json.results.slice(0, 3).map(this.format) });
-      }.bind(this));
-    }
-  }, {
-    key: 'handleChange',
-    value: function handleChange(event) {
-      this.setState({ search: event.target.value });
-    }
-  }, {
-    key: 'handleEnter',
-    value: function handleEnter(event) {
-      if (event.key == 'Enter') {
-        this.search();
-      }
-    }
-  }, {
-    key: 'addMovie',
-    value: function addMovie(movie) {
-      console.log(movie);
-      fetch('/me/movies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(movie)
-      }).then(function (res) {
-        return res.text();
-      }).then(function (text) {
-        console.log(text);
-      });
-    }
-  }, {
-    key: 'format',
-    value: function format(movie, i) {
-      var _this2 = this;
-
-      return _react2.default.createElement(
-        'div',
-        { key: i, className: 'movie' },
-        _react2.default.createElement('img', { src: "https://image.tmdb.org/t/p/w300" + movie.poster_path, width: '100' }),
-        _react2.default.createElement(
-          'pre',
-          null,
-          movie.title
-        ),
-        _react2.default.createElement('input', { type: 'submit', value: 'Add', onClick: function onClick() {
-            return _this2.addMovie(movie);
-          } })
-      );
-    }
-  }, {
-    key: 'render',
-    value: function render() {
-
-      return _react2.default.createElement(
-        'div',
-        null,
-        _react2.default.createElement('input', { type: 'text', name: 'movie', onChange: this.handleChange, onKeyUp: this.handleEnter }),
-        _react2.default.createElement('input', { type: 'submit', value: 'Search', onClick: this.search }),
-        this.state.searchResults
-      );
-    }
-  }]);
-
-  return Search;
-}(_react2.default.Component);
-
-/***/ }),
+/* 179 */,
 /* 180 */,
-/* 181 */,
-/* 182 */
+/* 181 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -22382,8 +22264,6 @@ var _reactDom2 = _interopRequireDefault(_reactDom);
 
 var _movies = __webpack_require__(80);
 
-var _search = __webpack_require__(179);
-
 __webpack_require__(82);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -22394,13 +22274,13 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var User = function (_React$Component) {
-  _inherits(User, _React$Component);
+var Home = function (_React$Component) {
+  _inherits(Home, _React$Component);
 
-  function User(props) {
-    _classCallCheck(this, User);
+  function Home(props) {
+    _classCallCheck(this, Home);
 
-    var _this = _possibleConstructorReturn(this, (User.__proto__ || Object.getPrototypeOf(User)).call(this, props));
+    var _this = _possibleConstructorReturn(this, (Home.__proto__ || Object.getPrototypeOf(Home)).call(this, props));
 
     _this.state = {
       movies: []
@@ -22408,7 +22288,7 @@ var User = function (_React$Component) {
     return _this;
   }
 
-  _createClass(User, [{
+  _createClass(Home, [{
     key: 'componentDidMount',
     value: function componentDidMount() {
       this.fetchMovies();
@@ -22416,10 +22296,10 @@ var User = function (_React$Component) {
   }, {
     key: 'fetchMovies',
     value: function fetchMovies() {
-      fetch('/user/marcusshannon/movies').then(function (res) {
+      fetch('/movies').then(function (res) {
         return res.json();
-      }).then(function (json) {
-        this.setState({ movies: json });
+      }).then(function (res) {
+        this.setState({ movies: res });
       }.bind(this));
     }
   }, {
@@ -22428,15 +22308,25 @@ var User = function (_React$Component) {
       return _react2.default.createElement(
         'div',
         null,
+        _react2.default.createElement(
+          'a',
+          { href: '/logout' },
+          'Logout'
+        ),
+        _react2.default.createElement(
+          'h1',
+          null,
+          'Recently Added'
+        ),
         _react2.default.createElement(_movies.Movies, { movies: this.state.movies })
       );
     }
   }]);
 
-  return User;
+  return Home;
 }(_react2.default.Component);
 
-_reactDom2.default.render(_react2.default.createElement(User, null), document.getElementById('root'));
+_reactDom2.default.render(_react2.default.createElement(Home, null), document.getElementById('root'));
 
 /***/ })
 /******/ ]);
