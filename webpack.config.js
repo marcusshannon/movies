@@ -5,7 +5,8 @@ module.exports = {
     home: './home.jsx',
     user: './user.jsx',
     userAuth: './userAuth.jsx',
-    homeAuth: './homeAuth.jsx'
+    homeAuth: './homeAuth.jsx',
+    me: './me.jsx'
   },
   output: {
     filename: '[name]-bundle.js',

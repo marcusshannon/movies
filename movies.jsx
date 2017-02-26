@@ -4,8 +4,8 @@ export class Movies extends React.Component {
 
   format(movie, i) {
     return (
-      <div key={i} className="movie" style={{float: "left", borderRadius: "8px", overflow: "hidden"}}>
-        <img src={"https://image.tmdb.org/t/p/w300" + movie.image_url} width="300"/>
+      <div key={i} className="movie" style={{float: "left"}}>
+        <img src={"https://image.tmdb.org/t/p/w600" + movie.image_url} width="300" style={{borderRadius: "8px", overflow: "hidden"}}/>
         <pre>{movie.title}</pre>
       </div>
     );
