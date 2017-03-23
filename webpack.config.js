@@ -2,11 +2,11 @@ var path = require('path');
 
 module.exports = {
   entry: {
-    home: './containers/home.jsx',
-    user: './containers/user.jsx',
-    userAuth: './containers/userAuth.jsx',
-    homeAuth: './containers/homeAuth.jsx',
-    me: './containers/me.jsx'
+    home: './components/containers/home.jsx',
+    user: './components/containers/user.jsx',
+    userAuth: './components/containers/userAuth.jsx',
+    homeAuth: './components/containers/homeAuth.jsx',
+    me: './components/containers/me.jsx'
   },
   output: {
     filename: '[name]-bundle.js',

@@ -24990,6 +24990,64 @@ var Search = exports.Search = function (_React$Component) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.Movies = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = __webpack_require__(9);
+
+var _react2 = _interopRequireDefault(_react);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var Movies = exports.Movies = function (_React$Component) {
+  _inherits(Movies, _React$Component);
+
+  function Movies() {
+    _classCallCheck(this, Movies);
+
+    return _possibleConstructorReturn(this, (Movies.__proto__ || Object.getPrototypeOf(Movies)).apply(this, arguments));
+  }
+
+  _createClass(Movies, [{
+    key: "format",
+    value: function format(movie, i) {
+      return _react2.default.createElement(
+        "div",
+        { key: i, className: "movie", style: { float: "left" } },
+        _react2.default.createElement("img", { src: "https://image.tmdb.org/t/p/w300" + movie.image_url, width: "140", style: { borderRadius: "8px", overflow: "hidden" } })
+      );
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      return _react2.default.createElement(
+        "div",
+        { style: { width: this.props.movies.length * 140, height: 220, overflowX: 'scroll', overflowY: 'hidden' } },
+        this.props.movies.map(this.format)
+      );
+    }
+  }]);
+
+  return Movies;
+}(_react2.default.Component);
+
+/***/ }),
+/* 209 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 exports.createMemoryHistory = exports.hashHistory = exports.browserHistory = exports.applyRouterMiddleware = exports.formatPattern = exports.useRouterHistory = exports.match = exports.routerShape = exports.locationShape = exports.RouterContext = exports.createRoutes = exports.Route = exports.Redirect = exports.IndexRoute = exports.IndexRedirect = exports.withRouter = exports.IndexLink = exports.Link = exports.Router = undefined;
 
 var _RouteUtils = __webpack_require__(28);
@@ -25112,64 +25170,6 @@ exports.applyRouterMiddleware = _applyRouterMiddleware3.default;
 exports.browserHistory = _browserHistory3.default;
 exports.hashHistory = _hashHistory3.default;
 exports.createMemoryHistory = _createMemoryHistory3.default;
-
-/***/ }),
-/* 209 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.Movies = undefined;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__(9);
-
-var _react2 = _interopRequireDefault(_react);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var Movies = exports.Movies = function (_React$Component) {
-  _inherits(Movies, _React$Component);
-
-  function Movies() {
-    _classCallCheck(this, Movies);
-
-    return _possibleConstructorReturn(this, (Movies.__proto__ || Object.getPrototypeOf(Movies)).apply(this, arguments));
-  }
-
-  _createClass(Movies, [{
-    key: "format",
-    value: function format(movie, i) {
-      return _react2.default.createElement(
-        "div",
-        { key: i, className: "movie", style: { float: "left" } },
-        _react2.default.createElement("img", { src: "https://image.tmdb.org/t/p/w300" + movie.image_url, width: "140", style: { borderRadius: "8px", overflow: "hidden" } })
-      );
-    }
-  }, {
-    key: "render",
-    value: function render() {
-      return _react2.default.createElement(
-        "div",
-        { style: { width: this.props.movies.length * 140, height: 220, overflowX: 'scroll', overflowY: 'hidden' } },
-        this.props.movies.map(this.format)
-      );
-    }
-  }]);
-
-  return Movies;
-}(_react2.default.Component);
 
 /***/ }),
 /* 210 */
@@ -27671,11 +27671,11 @@ var _reactDom = __webpack_require__(90);
 
 var _reactDom2 = _interopRequireDefault(_reactDom);
 
-var _movies = __webpack_require__(209);
+var _movies = __webpack_require__(208);
 
 var _search = __webpack_require__(207);
 
-var _reactRouter = __webpack_require__(208);
+var _reactRouter = __webpack_require__(209);
 
 __webpack_require__(91);
 
