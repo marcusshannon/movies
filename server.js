@@ -4,9 +4,11 @@ var session = require('express-session');
 var KnexSessionStore = require('connect-session-knex')(session);
 var app = express();
 var _ = require('lodash');
-var passport = require('passport')
+var passport = require('passport');
 var TwitterStrategy = require('passport-twitter').Strategy;
-var bodyParser = require('body-parser')
+var bodyParser = require('body-parser');
+var exphbs  = require('express-handlebars');
+
 
 var knex = require('knex')({
   client: 'mysql',
@@ -23,6 +25,10 @@ const store = new KnexSessionStore({
   tablename: 'sessions',
   createtable: true
 });
+
+app.engine('handlebars', exphbs({defaultLayout: 'main'}));
+app.set('view engine', 'handlebars');
+
 
 app.use(express.static('dist'));
 app.use(bodyParser.json());
@@ -75,7 +81,6 @@ app.get('/login/callback', passport.authenticate('twitter', {failureRedirect: '/
 });
 
 app.get('/logout', function(req, res){
-  console.log(req)
   req.logout();
   res.redirect('/');
 });
@@ -89,49 +94,17 @@ app.get('/me', function(req, res) {
   }
 })
 
-// Routes
-app.get('/user/:username', function(req, res) {
-  knex.raw('SELECT 1 FROM user where username = ?', [req.params.username])
-  .then(function(data) {
-    if (_.isEmpty(data[0])) {
-      res.send('404');
-    }
-    else if (!req.user) {
-      res.sendFile(path.join(__dirname, 'user.html'));
-    }
-    else if (req.user.username === req.params.username) {
-      res.sendFile(path.join(__dirname, 'me.html'))
-    }
-    else {
-      res.sendFile(path.join(__dirname, 'userAuth.html'));
-    }
-  });
-});
-
-app.get('/home', function(req, res) {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'home.html'));
-  } else {
-    res.send('Unauthorized')
-  }
-});
-
-app.get('/tester', function(req, res) {
-  res.sendFile(path.join(__dirname, 'home.html'));
-});
-
-
-
+// data api
 app.get('/movies', function(req, res) {
   knex.raw('SELECT * FROM movie').then(function(data) {
     res.send(data[0])
   });
 });
 
-
+// get my movies
 app.get('/me/movies', function(req, res) {
   if (req.user) {
-    knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ?', [req.user.id])
+    knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ? ORDER BY watched.created DESC', [req.user.id])
     .then(function(data) {
       return {movies: data[0]}
     })
@@ -148,32 +121,33 @@ app.get('/me/movies', function(req, res) {
   }
 })
 
+// recommend a movie
 app.put('/me/movies/recommend', function(req, res) {
   if (req.user) {
-    console.log(req.body.id)
     knex.raw('SELECT user FROM watched where id = ? LIMIT 1', [req.body.id])
     .then(function(data) {
       if (data[0][0].user == req.user.id) {
         knex.raw('UPDATE watched SET recommend = ? WHERE id=?', [req.body.value, req.body.id])
         .then(function() {
-          res.sendStatus(200)
+          res.sendStatus(200);
         })
         .catch(function() {
-          res.sendStatus(403)
+          res.sendStatus(403);
         })
       }
     })
     .catch(function() {
-      res.sendStatus(403).end()
+      res.sendStatus(403);
     })
   }
   else {
-    res.sendStatus(401).end();
+    res.sendStatus(401);
   }
 })
 
+// watch a movie
 app.post('/me/movies', function(req, res) {
-  knex.raw('INSERT IGNORE INTO movie VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
+  knex.raw('INSERT IGNORE INTO movie (id, title, image_url) VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
   .then(function() {
     knex.raw('INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)', [req.user.id, req.body.id])
     .then(function() {
@@ -190,12 +164,14 @@ app.post('/me/movies', function(req, res) {
   });
 })
 
+// get other user's movies
 app.get('/user/:username/movies', function(req, res) {
   knex.raw('Select * FROM Movie Where id in (SELECT movie from watched where user in (SELECT id from user where username = ?))', [req.params.username]).then(function(data) {
     res.send(data[0])
   });
 });
 
+// check if follow someone TODO: ADD INITIAL STATE SO THIS IS UNECESSARY
 app.get('/me/follow/:username', function(req, res) {
   if (req.user) {
     knex.select('id').from('user').where('username', req.params.username)
@@ -228,13 +204,19 @@ app.get('/me/follow/:username', function(req, res) {
   }
 })
 
+// follow other user
 app.post('/me/follow/:username', function(req, res) {
   if (req.user) {
-    knex.select('id').from('user').where('username', req.params.username)
+    knex.raw('SELECT id from user where username = ?', [req.params.username])
+    .then(function(data) {
+      console.log(data);
+    })
+    knex.select('*').from('user').where('username', req.params.username)
     .then(function(data) {
       if (data.length == 0) {
         return Promise.reject('invalid username')
       }
+      console.log(data[0])
       return data[0].id
     })
     .then(function(id) {
@@ -253,6 +235,7 @@ app.post('/me/follow/:username', function(req, res) {
   }
 });
 
+// unfollow someone
 app.delete('/me/follow/:username', function(req, res) {
   if (req.user) {
     knex.select('id').from('user').where('username', req.params.username)
@@ -279,13 +262,39 @@ app.delete('/me/follow/:username', function(req, res) {
   }
 })
 
+// ROUTES
+// go to home page
+app.get('/user/:username', function(req, res) {
+  knex.raw('SELECT 1 FROM user where username = ?', [req.params.username])
+  .then(function(data) {
+    if (_.isEmpty(data[0])) {
+      res.send('404');
+    }
+    else if (!req.user) {
+      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'user'});
+    }
+    else if (req.user.username === req.params.username) {
+      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'me'});
+    }
+    else {
+      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'userAuth'});
+    }
+  });
+});
+
 app.get('/', function(req, res) {
-  if (req.user) {
-    res.sendFile(path.join(__dirname, 'homeAuth.html'));
-  }
-  else {
-    res.sendFile(path.join(__dirname, 'home.html'));
-  }
+  knex('movie').orderBy('created', 'desc').limit(20)
+  .then(function(data) {
+    if (req.user) {
+      var initialState = req.user;
+      initialState.movies = data;
+      res.render('home', {initialState: JSON.stringify(initialState).replace(/</g, '\\u003c'), bundle: 'home'});
+    }
+    else {
+      var initialState = {movies: data}
+      res.render('home', {initialState: JSON.stringify(initialState).replace(/</g, '\\u003c'), bundle: 'home'});
+    }
+  });
 });
 
 app.listen(process.env.PORT || 3000);

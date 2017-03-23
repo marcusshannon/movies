@@ -1,56 +1,40 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Movies} from './movies.jsx'
-import {Login} from './login.jsx'
+import { Login } from './login.jsx'
 import { Router, Route, Link, browserHistory } from 'react-router'
 import 'whatwg-fetch'
 
 class Home extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      movies: []
-    };
-  }
-
-  componentWillMount() {
-    this.fetchUser();
-    this.fetchMovies();
-  }
-
-  componentDidMount() {
-  }
-
-  fetchUser() {
-    fetch('/me', {credentials: 'include'})
-    .then(function(res) {
-      return res.json();
-    })
-    .then(function(json) {
-      if (json) {
-        this.setState({user: json})
-      }
-    }.bind(this))
-  }
-
-  fetchMovies() {
-    fetch('/movies')
-    .then(function(res) {
-      return res.json();
-    })
-    .then(function(res) {
-      this.setState({movies: res});
-    }.bind(this));
+    this.state = __INITIAL_STATE__;
   }
 
   render() {
     return (
       <div>
-        <a href='/login'>Login with Twitter</a>
-        <h1>Recently Added</h1>
+        <Login user={this.state.username}/>
+        <h1>Recently Watched</h1>
         <Movies movies={this.state.movies}/>
       </div>
     )
+  }
+}
+
+class Movies extends React.Component {
+  renderMovie(movie, i) {
+    return (
+      <div key={i}>
+        <a href='http://www.imdb.com' target="_blank"><img src={"https://image.tmdb.org/t/p/w150" + movie.image_url} width="150"/></a>
+        {movie.title}
+      </div>
+    );
+  }
+
+  render() {
+    return (
+      <div>{this.props.movies.map(this.renderMovie)}</div>
+    );
   }
 }
 

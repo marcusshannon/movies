@@ -74,19 +74,22 @@ export class Movies extends React.Component {
 
   formatMovies(movie, i) {
     return (
-      <div key={i} className="movie" style={{float: "left"}}>
-        <img src={"https://image.tmdb.org/t/p/w600" + movie.image_url} width="300" style={{borderRadius: "5px", overflow: "hidden"}}/>
-        <pre>{movie.title}</pre>
-        <button onClick={() => this.recommend(movie.id, movie.recommend, i)}>{movie.recommend}</button>
+      <div key={i} className="movie" style={{float: "left", marginRight: 5}}>
+        <img src={"https://image.tmdb.org/t/p/w600" + movie.image_url} width="100" style={{borderRadius: "5px", overflow: "hidden"}}/>
+          <div style={{width:100, overflow: 'hidden', whiteSpace: "no-wrap"}}>
+            <button type="button" style={{width: "100%"}} className={movie.recommend == 1 ? "btn btn-primary" : "btn btn-secondary"} onClick={() => this.recommend(movie.id, movie.recommend, i)}>Rec</button>
+          </div>
       </div>
     );
   }
 
   formatRecommendations(movie, i) {
     return (
-      <div key={i} className="recommendation">
-        <img src={"https://image.tmdb.org/t/p/w600" + movie.image_url} width="300" style={{borderRadius: "5px", overflow: "hidden"}}/>
-        <pre>{movie.title}</pre>
+      <div key={i} className="recommendation" style={{float: 'left', marginRight: 5}}>
+        <img src={"https://image.tmdb.org/t/p/w600" + movie.image_url} width="100" style={{borderRadius: "5px", overflow: "hidden"}}/>
+          <div style={{width:100}}>
+            {movie.title}
+          </div>
       </div>
     );
   }
@@ -94,12 +97,22 @@ export class Movies extends React.Component {
   render() {
     return (
       <div>
-        <h1>Recommendations</h1>
-        <div>
-          {this.state.recommendations.map(this.formatRecommendations)}
+        <div className="container">
+          <h2>Recommendations</h2>
         </div>
-        <h1>My movies</h1>
-        {this.state.movies.map(this.formatMovies)}
+        <div className="container" style={{overflowX: 'scroll', overflowY: 'hidden'}}>
+          <div style={{width: this.state.recommendations.length * 105}}>
+            {this.state.recommendations.map(this.formatRecommendations)}
+          </div>
+        </div>
+        <div className="container">
+          <h2>My Movies</h2>
+        </div>
+        <div className="container" style={{overflowX: 'scroll', overflowY: 'hidden'}}>
+          <div style={{width: this.state.movies.length * 105}}>
+            {this.state.movies.map(this.formatMovies)}
+          </div>
+        </div>
       </div>
     );
   }
