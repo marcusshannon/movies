@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Movies} from './movies.jsx'
-import {Search} from './search.jsx'
-import { Router, Route, Link, browserHistory } from 'react-router'
+import { Movies } from '../presentationals/movies.jsx'
+import { Search } from './search.jsx'
+import { Router, Route, browserHistory } from 'react-router'
 import 'whatwg-fetch'
 
 class User extends React.Component {
@@ -20,6 +20,7 @@ class User extends React.Component {
     this.fetchFollow();
   }
 
+  // TODO: Make this an intial state
   fetchFollow() {
     fetch('/me/follow/' + this.props.params.username, {credentials: 'include'})
     .then(function(res) {

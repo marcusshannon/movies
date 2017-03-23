@@ -1,7 +1,6 @@
 import React from 'react';
 
 export class Movies extends React.Component {
-
   format(movie, i) {
     return (
       <div key={i} className="movie" style={{float: "left"}}>

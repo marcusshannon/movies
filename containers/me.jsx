@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Search} from './search.jsx'
-import { Router, Route, Link, browserHistory } from 'react-router'
+import { Search } from './search.jsx'
+import { Router, Route, browserHistory } from 'react-router'
 import 'whatwg-fetch'
 
 class User extends React.Component {

@@ -1,11 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {Movies} from './movies.jsx'
-import {Search} from './search.jsx'
-import { Router, Route, Link, browserHistory } from 'react-router'
+import { Movies } from '../presentationals/movies.jsx'
 import 'whatwg-fetch'
 
-class User extends React.Component {
+class Home extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -18,29 +16,27 @@ class User extends React.Component {
   }
 
   fetchMovies() {
-    fetch('/user/' + this.props.params.userId + '/movies')
+    fetch('/movies')
     .then(function(res) {
       return res.json();
     })
-    .then(function(json) {
-      this.setState({movies: json})
+    .then(function(res) {
+      this.setState({movies: res});
     }.bind(this));
   }
-
 
   render() {
     return (
       <div>
-        <a href='/login'>Login with Twitter</a>
+        <a href="/logout">Logout</a>
+        <h1>Recently Added</h1>
         <Movies movies={this.state.movies}/>
       </div>
-    );
+    )
   }
 }
 
 ReactDOM.render(
-  <Router history={browserHistory}>
-    <Route path='/user/:userId' component={User}/>
-  </Router>,
+  <Home/>,
   document.getElementById('root')
 );

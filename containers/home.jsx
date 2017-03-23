@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Login } from './login.jsx'
-import { Router, Route, Link, browserHistory } from 'react-router'
+import { Login } from '../presentationals/login.jsx'
 import 'whatwg-fetch'
 
 class Home extends React.Component {
