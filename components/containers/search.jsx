@@ -19,7 +19,7 @@ export class Search extends React.Component {
       return res.json();
     })
     .then(function(json) {
-      this.setState({searchResults: json.results.slice(0,3).filter(movie => movie.poster_path != null).map(this.format)})
+      this.setState({searchResults: json.results.slice(0,1).filter(movie => movie.poster_path != null).map(this.format)})
     }.bind(this));
   }
 

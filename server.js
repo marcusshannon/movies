@@ -95,9 +95,13 @@ app.get('/me', function(req, res) {
 })
 
 // data api
-app.get('/movies', function(req, res) {
-  knex.raw('SELECT * FROM movie').then(function(data) {
-    res.send(data[0])
+app.get('/api/recent', function(req, res) {
+  knex('movie').orderBy('created', 'desc').limit(16)
+  .then(function(data) {
+    res.send(data);
+  })
+  .catch(function(err) {
+    res.sendStatus(500);
   });
 });
 
@@ -121,8 +125,59 @@ app.get('/me/movies', function(req, res) {
   }
 })
 
+
+app.get('/api/recommendations', function(req, res) {
+  if (req.user) {
+    knex.raw('select * from movie where id in (select movie from watched where user in (select leader from follow where follower = ?) and recommend = 1)', [req.user.id])
+    .then(function(data) {
+      res.send(data[0]);
+    });
+  }
+  else {
+    res.sendStatus(401);
+  }
+});
+
+app.get('/api/followers', function(req, res) {
+  if (req.user) {
+    knex.raw('select * from user where id in (select follower from follow where leader = ?)', [req.user.id])
+    .then(function(data) {
+      res.send(data[0]);
+    });
+  }
+  else {
+    res.sendStatus(401);
+  }
+});
+
+app.get('/api/following', function(req, res) {
+  if (req.user) {
+    knex.raw('select * from user where id in (select leader from follow where follower = ?)', [req.user.id])
+    .then(function(data) {
+      res.send(data[0]);
+    });
+  }
+  else {
+    res.sendStatus(401);
+  }
+});
+
+app.get('/api/movies', function(req, res) {
+  if (req.user) {
+    knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ? ORDER BY watched.created DESC', [req.user.id])
+    .then(function(data) {
+      res.send(data[0]);
+    });
+  }
+  else {
+    res.sendStatus(401);
+  }
+})
+
+
+
 // recommend a movie
-app.put('/me/movies/recommend', function(req, res) {
+app.put('/api/recommend', function(req, res) {
   if (req.user) {
     knex.raw('SELECT user FROM watched where id = ? LIMIT 1', [req.body.id])
     .then(function(data) {
@@ -131,13 +186,16 @@ app.put('/me/movies/recommend', function(req, res) {
         .then(function() {
           res.sendStatus(200);
         })
-        .catch(function() {
-          res.sendStatus(403);
+        .catch(function(err) {
+          res.sendStatus(500);
         })
       }
+      else {
+        res.sendStatus(403);
+      }
     })
-    .catch(function() {
-      res.sendStatus(403);
+    .catch(function(err) {
+      res.sendStatus(500);
     })
   }
   else {
@@ -262,39 +320,47 @@ app.delete('/me/follow/:username', function(req, res) {
   }
 })
 
+
 // ROUTES
-// go to home page
+// homepage
+app.get('/recommendations', function(req, res) {
+  if (req.user) {
+    res.render('stateful', {initialState: JSON.stringify(req.user).replace(/</g, '\\u003c'), bundle: 'app'});
+  }
+  else {
+    res.redirect('/');
+  }
+})
+
+// go to user page
 app.get('/user/:username', function(req, res) {
-  knex.raw('SELECT 1 FROM user where username = ?', [req.params.username])
-  .then(function(data) {
-    if (_.isEmpty(data[0])) {
-      res.send('404');
-    }
-    else if (!req.user) {
-      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'user'});
-    }
-    else if (req.user.username === req.params.username) {
-      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'me'});
-    }
-    else {
-      res.render('home', {initialState: JSON.stringify({blah: 'blah'}).replace(/</g, '\\u003c'), bundle: 'userAuth'});
-    }
-  });
+  if (req.user && req.user.username == req.params.username) {
+    res.redirect('/recommendations');
+  }
+  else if (req.user) {
+    res.render('stateful', {initialState: JSON.stringify(req.user).replace(/</g, '\\u003c'), bundle: 'app'});
+  }
+  else {
+    res.render('stateful', {initialState: JSON.stringify({}).replace(/</g, '\\u003c'), bundle: 'app'});
+  }
 });
 
 app.get('/', function(req, res) {
-  knex('movie').orderBy('created', 'desc').limit(20)
-  .then(function(data) {
-    if (req.user) {
-      var initialState = req.user;
-      initialState.movies = data;
-      res.render('home', {initialState: JSON.stringify(initialState).replace(/</g, '\\u003c'), bundle: 'home'});
-    }
-    else {
-      var initialState = {movies: data}
-      res.render('home', {initialState: JSON.stringify(initialState).replace(/</g, '\\u003c'), bundle: 'home'});
-    }
-  });
+  if (req.user) {
+    res.redirect('/recommendations');
+  }
+  else {
+    res.render('stateful', {initialState: JSON.stringify({}).replace(/</g, '\\u003c'), bundle: 'app'});
+  }
 });
+
+app.get('*', function(req, res) {
+  if (req.user) {
+    res.render('stateful', {initialState: JSON.stringify(req.user).replace(/</g, '\\u003c'), bundle: 'app'});
+  }
+  else {
+    res.redirect('/');
+  }
+})
 
 app.listen(process.env.PORT || 3000);
