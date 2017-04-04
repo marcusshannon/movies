@@ -1,27 +1,46 @@
 import React from 'react';
 import { Following } from '../presentationals/Following.jsx';
+import { fetchFollowing, unfollow } from '../../actions/index.js'
+import { connect } from 'react-redux'
 
 export class FollowingContainer extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { following: [] };
   }
 
   componentWillMount() {
-    this.fetchFollowing();
+    this.props.fetchFollowing();
   }
 
-  fetchFollowing() {
-    fetch('/api/following', {credentials: 'include'})
-    .then(function(res) {
-      return res.json();
+  unfollow = (user) => {
+    fetch('/api/relationship/' + user.id, {
+      method: 'DELETE',
+      credentials: 'include'
     })
-    .then(function(json) {
-      this.setState({following: json});
-    }.bind(this));
+    .then(res => {
+      if (res.status == 200) {
+        var following = new Set(this.state.following);
+        following.delete(user);
+        following = [...following];
+        this.setState({following: following});
+      }
+    });
   }
 
   render() {
-    return <Following following={this.state.following}/>;
+    return <Following following={this.props.following} unfollow={this.props.unfollow}/>;
   }
 }
+
+const mapStateToProps = (state) => {
+  return {following: state.following}
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchFollowing: () => {dispatch(fetchFollowing())},
+    unfollow: (user, i) => {dispatch(unfollow(user, i))}
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(FollowingContainer)

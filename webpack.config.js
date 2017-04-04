@@ -2,7 +2,7 @@ var path = require('path');
 
 module.exports = {
   entry: {
-    app: './components/containers/app.jsx'
+    app: './components/containers/App.jsx'
   },
   output: {
     filename: '[name]-bundle.js',

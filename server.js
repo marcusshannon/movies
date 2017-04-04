@@ -52,11 +52,12 @@ passport.use(new TwitterStrategy({
   callbackURL: "http://localhost:3000/login/callback"
 },
 function(token, tokenSecret, profile, done) {
+  console.log(profile.photos[0]);
   knex.raw('SELECT * FROM user WHERE id = ?', [profile.id])
   .then(function(data) {
     data = data[0]
     if (data.length == 0) {
-      knex.raw('INSERT INTO user VALUES (?, ?, ?)', [profile.id, profile.username, profile.displayName])
+      knex.raw('INSERT INTO user VALUES (?, ?, ?, ?)', [profile.id, profile.username, profile.displayName, profile.photos[0].value])
       .then(function(data) {
         return done(null, {id: profile.id, username: profile.username});
       })
@@ -85,16 +86,6 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-app.get('/me', function(req, res) {
-  if (req.user) {
-    res.send(req.user)
-  }
-  else {
-    res.json(null)
-  }
-})
-
-// data api
 app.get('/api/recent', function(req, res) {
   knex('movie').orderBy('created', 'desc').limit(16)
   .then(function(data) {
@@ -105,30 +96,9 @@ app.get('/api/recent', function(req, res) {
   });
 });
 
-// get my movies
-app.get('/me/movies', function(req, res) {
-  if (req.user) {
-    knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ? ORDER BY watched.created DESC', [req.user.id])
-    .then(function(data) {
-      return {movies: data[0]}
-    })
-    .then(function(movieObj) {
-      knex.raw('select * from movie where id in (select movie from watched where user in (select leader from follow where follower = ?) and recommend = 1)', [req.user.id])
-      .then(function(data) {
-        movieObj.recommendations = data[0];
-        res.send(movieObj);
-      });
-    });
-  }
-  else {
-    res.sendStatus(401);
-  }
-})
-
-
 app.get('/api/recommendations', function(req, res) {
   if (req.user) {
-    knex.raw('select * from movie where id in (select movie from watched where user in (select leader from follow where follower = ?) and recommend = 1)', [req.user.id])
+    knex.raw('select movie.id, title, image_url, watched.created, leader, username, name from follow join watched on leader = user join movie on movie = movie.id join user on leader = user.id where follower = ? and recommend = 1 order by watched.created desc;', [req.user.id])
     .then(function(data) {
       res.send(data[0]);
     });
@@ -165,66 +135,64 @@ app.get('/api/following', function(req, res) {
 app.get('/api/movies', function(req, res) {
   if (req.user) {
     knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ? ORDER BY watched.created DESC', [req.user.id])
-    .then(function(data) {
-      res.send(data[0]);
-    });
+    .then(data => {res.send(data[0])});
   }
   else {
     res.sendStatus(401);
   }
 })
 
-
-
-// recommend a movie
-app.put('/api/recommend', function(req, res) {
+app.put('/api/recommend/:id', (req, res) => {
   if (req.user) {
-    knex.raw('SELECT user FROM watched where id = ? LIMIT 1', [req.body.id])
-    .then(function(data) {
-      if (data[0][0].user == req.user.id) {
-        knex.raw('UPDATE watched SET recommend = ? WHERE id=?', [req.body.value, req.body.id])
-        .then(function() {
-          res.sendStatus(200);
-        })
-        .catch(function(err) {
-          res.sendStatus(500);
-        })
-      }
-      else {
-        res.sendStatus(403);
-      }
-    })
-    .catch(function(err) {
-      res.sendStatus(500);
-    })
+    knex.raw('UPDATE watched set recommend = NOT recommend where id = ? and user = ?', [req.params.id, req.user.id])
+    .then(data => {res.sendStatus(200)})
+    .catch(err => {res.send(500)});
   }
   else {
     res.sendStatus(401);
   }
-})
+});
 
 // watch a movie
-app.post('/me/movies', function(req, res) {
-  knex.raw('INSERT IGNORE INTO movie (id, title, image_url) VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
-  .then(function() {
-    knex.raw('INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)', [req.user.id, req.body.id])
-    .then(function() {
-      res.sendStatus(200);
+app.post('/api/movies', function(req, res) {
+  if (req.user) {
+    knex.raw('INSERT IGNORE INTO movie (id, title, image_url) VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
+    .then(() => {
+      knex.raw('INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)', [req.user.id, req.body.id])
+      .then(data => {
+        if (data[0].affectedRows == 0) {
+          res.send({error: "Exists"});
+        }
+        res.send({
+          id: data[0].insertId,
+          movie: req.body.id,
+          title: req.body.title,
+          image_url: req.body.poster_path,
+          recommend: 0
+        })
+      })
     })
-    .catch(function(err) {
-      console.log(err);
-      res.sendStatus(500);
-    });
-  })
-  .catch(function(err) {
-    console.log(err);
-    res.sendStatus(500);
-  });
+  }
+  else {
+    res.sendStatus(403);
+  }
+})
+
+app.delete('/api/movies/:id', function(req, res) {
+  if (req.user) {
+    knex.raw('DELETE IGNORE FROM watched where id = ? and user = ?', [req.params.id, req.user.id])
+    .then(() => {res.sendStatus(200)})
+    .catch(err => {res.sendStatus(500)});
+  }
+  else {
+    res.sendStatus(403);
+  }
 })
 
 // get other user's movies
 app.get('/user/:username/movies', function(req, res) {
-  knex.raw('Select * FROM Movie Where id in (SELECT movie from watched where user in (SELECT id from user where username = ?))', [req.params.username]).then(function(data) {
+  knex.raw('Select * FROM Movie Where id in (SELECT movie from watched where user in (SELECT id from user where username = ?))', [req.params.username])
+  .then(function(data) {
     res.send(data[0])
   });
 });
@@ -293,36 +261,18 @@ app.post('/me/follow/:username', function(req, res) {
   }
 });
 
-// unfollow someone
-app.delete('/me/follow/:username', function(req, res) {
+app.delete('/api/following/:id', function(req, res) {
   if (req.user) {
-    knex.select('id').from('user').where('username', req.params.username)
-    .then(function(data) {
-      if (data.length == 0) {
-        return Promise.reject('invalid username')
-      }
-      return data[0].id
-    })
-    .then(function(id) {
-      knex.raw('DELETE FROM follow where leader = ? and follower = ?', [id, req.user.id])
-      .then(function(data) {
-        console.log(data);
-        res.sendStatus(200);
-      })
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.sendStatus(500)
-    })
+    knex.raw('DELETE FROM follow where leader = ? and follower = ?', [req.params.id, req.user.id])
+    .then(() => {res.sendStatus(200)})
+    .catch((err) => {res.sendStatus(500)})
   }
   else {
     res.sendStatus(401);
   }
 })
 
-
-// ROUTES
-// homepage
+// PAGES
 app.get('/recommendations', function(req, res) {
   if (req.user) {
     res.render('stateful', {initialState: JSON.stringify(req.user).replace(/</g, '\\u003c'), bundle: 'app'});
@@ -332,7 +282,6 @@ app.get('/recommendations', function(req, res) {
   }
 })
 
-// go to user page
 app.get('/user/:username', function(req, res) {
   if (req.user && req.user.username == req.params.username) {
     res.redirect('/recommendations');

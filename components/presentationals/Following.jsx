@@ -1,21 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router'
 
-
-export class Following extends React.Component {
-  formatFollowing(following, i) {
+export const Following = (props) => {
+  const formatFollowing = (following, i) => {
     return (
       <div key={i}>
-        <Link to={"/user/" + following.username}> {following.name} @{following.username}</Link>
+        <img className="avatar" src={following.image}/>
+        {following.name} <Link to={"/user/" + following.username}>@{following.username}</Link>
+      <button onClick={() => props.unfollow(following, i)}>Unfollow</button>
       </div>
     );
   }
-
-  render() {
-    return (
-      <div>
-        {this.props.following.map(this.formatFollowing)}
-      </div>
-    );
-  }
+  return (
+    <div>
+      {props.following.map(formatFollowing)}
+    </div>
+  );
 }
