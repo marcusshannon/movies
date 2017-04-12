@@ -4,22 +4,22 @@ import { connect } from 'react-redux'
 import { fetchMovies, recommend, deleteMovie } from '../../actions/index.js'
 
 class MoviesContainer extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {movies: []};
-  }
-
-  componentWillMount() {
-    this.props.fetchMovies();
-  }
-
   render() {
     return <Movies movies={this.props.movies} deleteMovie={this.props.deleteMovie} recommend={this.props.recommend}/>
   }
 }
 
 const mapStateToProps = (state) => {
-  return {movies: state.movies}
+  return {
+    movies: state.watched.allIds.map((id, index) => {
+      return Object.assign(state.movies.byId[state.watched.byId[id].movie], {
+        created: state.watched.byId[id].created,
+        id: state.watched.byId[id].id,
+        recommend: state.watched.byId[id].recommend,
+        index: index
+      })
+    })
+  }
 }
 
 const mapDispatchToProps = dispatch => {

@@ -94,7 +94,7 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/api/recent', (req, res) => {
-  knex('movie').orderBy('created', 'DESC').limit(18)
+  knex('movie').orderBy('created', 'DESC').limit(16)
   .then(data => res.send(data))
   .catch(err => res.sendStatus(500));
 });

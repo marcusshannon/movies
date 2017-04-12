@@ -4,7 +4,7 @@ import { unfollow, follow } from '../../actions/index.js'
 import { connect } from 'react-redux'
 
 
-class FollowersContainer extends React.Component {
+class UserFollowersContainer extends React.Component {
   render() {
     return <Followers followers={this.props.followers} following={this.props.following} unfollow={this.props.unfollow} follow={this.props.follow}/>;
   }
@@ -12,15 +12,15 @@ class FollowersContainer extends React.Component {
 
 const mapStateToProps = (state) => {
   var following = {};
-  state.following.allIds.map((id, i) => {
-    var follow = state.following.byId[id]
+  state.currentUserFollowers.allIds.map((id, i) => {
+    var follow = state.currentUserFollowers.byId[id]
+    console.log(follow)
     Object.assign(following, {
       [follow.user]: {id: follow.id, user: follow.user, index: i}
-
     })
   })
   return {
-    followers: state.followers.allIds.map(id => state.users.byId[state.followers.byId[id].user]),
+    followers: state.currentUserFollowers.allIds.map(id => state.users.byId[state.currentUserFollowers.byId[id].user]),
     following: following
   }
 }
@@ -32,4 +32,4 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(FollowersContainer)
+export default connect(mapStateToProps, mapDispatchToProps)(UserFollowersContainer)

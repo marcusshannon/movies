@@ -4,15 +4,17 @@ import { Link } from 'react-router'
 export const Following = (props) => {
   const formatFollowing = (following, i) => {
     return (
-      <div key={i}>
-        <img className="avatar" src={following.image}/>
-        {following.name} <Link to={"/user/" + following.username}>@{following.username}</Link>
-      <button onClick={() => props.unfollow(following, i)}>Unfollow</button>
+      <div className="people" key={i}>
+        <div>
+          <img className="ui avatar image" src={following.user.image_url}/>
+          {following.user.name} <Link onClick={() => props.setUser(following.user.id)} to={"/user/" + following.user.username + "/movies"}>@{following.user.username}</Link>
+        </div>
+        <button className="ui red mini right floated button" onClick={() => props.unfollow(following.meta.id, i)}>Unfollow</button>
       </div>
     );
   }
   return (
-    <div>
+    <div className="ui container">
       {props.following.map(formatFollowing)}
     </div>
   );

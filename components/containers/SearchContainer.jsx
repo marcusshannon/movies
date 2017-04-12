@@ -46,4 +46,4 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(SearchContainer)
+export default connect(null, mapDispatchToProps)(SearchContainer)

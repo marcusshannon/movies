@@ -1,13 +1,12 @@
 .movie-container {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: space-around;
 }
 
 .movie {
   width: 120px;
   overflow: hidden;
-  margin: 5px;
 }
 
 .poster {
@@ -30,4 +29,32 @@
 .nav-container {
   display: flex;
   justify-content: space-between;
+}
+
+.people {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px;
+}
+
+.fa-check {
+  color: white;
+}
+
+.primary {
+  color: CornflowerBlue;
+}
+
+.recommend {
+  position: relative;
+  left: 109px;
+  top: -22px;
+  font-size: 15px;
+}
+
+.delete {
+  position: relative;
+  font-size: 15px;
+  top: -205px;
+  left: -38px;
 }

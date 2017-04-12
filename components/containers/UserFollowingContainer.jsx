@@ -3,7 +3,7 @@ import { Following } from '../presentationals/Following.jsx';
 import { unfollow, setUser } from '../../actions/index.js'
 import { connect } from 'react-redux'
 
-export class FollowingContainer extends React.Component {
+export class UserFollowingContainer extends React.Component {
   render() {
     return <Following following={this.props.following} unfollow={this.props.unfollow} setUser={this.props.setUser}/>;
   }
@@ -11,10 +11,10 @@ export class FollowingContainer extends React.Component {
 
 const mapStateToProps = (state) => {
   return {
-    following: state.following.allIds.map(id => {
+    following: state.currentUserFollowing.allIds.map(id => {
       return {
-        user: state.users.byId[state.following.byId[id].user],
-        meta: state.following.byId[id]
+        user: state.users.byId[state.currentUserFollowing.byId[id].user],
+        meta: state.currentUserFollowing.byId[id]
       }
     })
   }
@@ -27,4 +27,4 @@ const mapDispatchToProps = dispatch => {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(FollowingContainer)
+export default connect(mapStateToProps, mapDispatchToProps)(UserFollowingContainer)

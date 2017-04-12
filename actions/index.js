@@ -5,10 +5,18 @@ export const receiveMovies = (movies) => {
   }
 }
 
-export const receiveRecommendations = (recommendations) => {
+export const receiveUserMovies = (movies) => {
+  return {
+    type: 'RECEIVE_USER_MOVIES',
+    movies
+  }
+}
+
+export const receiveRecommendations = (json) => {
   return {
     type: 'RECEIVE_RECOMMENDATIONS',
-    recommendations
+    recommendations: json.recommendations,
+    movies: json.movies
   }
 }
 
@@ -32,6 +40,16 @@ export const fetchMovies = () => {
       return fetch('/api/movies', {credentials: 'include'})
         .then(res => res.json())
         .then(json => {dispatch(receiveMovies(json))});
+    }
+  }
+}
+
+export const fetchUser = () => {
+  return (dispatch, getState) => {
+    if (!getState().fetchedUserMovies) {
+      return fetch('/api/user/' + getState().currentUser, {credentials: 'include'})
+        .then(res => res.json())
+        .then(json => dispatch(receiveUserMovies(json)));
     }
   }
 }
@@ -67,8 +85,8 @@ export const fetchFollowing = () => {
 }
 
 export const addMovie = (movie) => {
-  return dispatch => {
-    return fetch('/api/movies', {
+  return (dispatch, getState) => {
+      return fetch('/api/movies', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -79,35 +97,59 @@ export const addMovie = (movie) => {
     .then(res => res.json())
     .then(json => {
       if (!json.error) {
-        dispatch({type: 'ADD_MOVIE', movie: json})
+        dispatch({type: 'ADD_MOVIE', movies: json.movies, watched: json.watched})
       }
     })
   }
 }
 
-export const unfollow = (user, i) => {
+export const unfollow = (id, i) => {
   return dispatch => {
-    return fetch('/api/following/' + user.id, {method: 'DELETE', credentials: 'include'})
+    return fetch('/api/unfollow/' + id, {method: 'DELETE', credentials: 'include'})
     .then(res => {
-      if (res.status == 200) dispatch({type: 'UNFOLLOW', i})
+      if (res.status == 200) dispatch({type: 'UNFOLLOW', id, i})
     });
   }
 }
 
-export const recommend = (movie, i) => {
+export const follow = (id) => {
   return dispatch => {
-    return fetch('/api/recommend/' + movie.id, {method: 'PUT', credentials: 'include'})
+    return fetch('/api/follow/' + id, {method: 'POST', credentials: 'include'})
+    .then(res => res.json())
+    .then(json => {if (json.id) dispatch({type: 'FOLLOW', id: json.id, user: id})})
+  }
+}
+
+export const recommend = (id) => {
+  return dispatch => {
+    return fetch('/api/recommend/' + id, {method: 'PUT', credentials: 'include'})
     .then(res => {
-      if (res.status == 200) dispatch({type: 'RECOMMEND', movie, i})
+      if (res.status == 200) dispatch({type: 'RECOMMEND', id})
     });
   }
 }
 
-export const deleteMovie = (movie, i) => {
+export const deleteMovie = (id, i) => {
   return dispatch => {
-    return fetch('/api/movies/' + movie.id, {method: 'DELETE', credentials: 'include'})
+    return fetch('/api/movies/' + id, {method: 'DELETE', credentials: 'include'})
     .then(res => {
-      if (res.status == 200) dispatch({type: 'DELETE_MOVIE', i})
+      if (res.status == 200) dispatch({type: 'DELETE_MOVIE', id, i})
     });
+  }
+}
+
+export const setUser = (id) => {
+  return dispatch => {
+    dispatch({type: 'SET_USER', id})
+    return fetch('/api/user/' + id, {credentials: 'include'})
+    .then(res => res.json())
+    .then(json => dispatch({
+      type: 'RECEIVE_USER',
+      movies: json.movies,
+      users: json.users,
+      currentUserFollowing: json.currentUserFollowing,
+      currentUserFollowers: json.currentUserFollowers,
+      currentUserWatched: json.currentUserWatched
+    }));
   }
 }

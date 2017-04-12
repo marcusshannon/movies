@@ -14,12 +14,19 @@ class RecommendationsContainer extends React.Component {
 }
 
 const mapStateToProps = (state) => {
-  return {recommendations: state.recommendations}
+  return {
+    recommendations: state.recommendations.allIds.map(id => {
+      return {
+        movie: state.movies.byId[state.recommendations.byId[id].movie],
+        user: state.users.byId[state.recommendations.byId[id].user]
+      }
+    })
+  }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    fetchRecommendations: () => {dispatch(fetchRecommendations())},
+    fetchRecommendations: () => {dispatch(fetchRecommendations())}
   }
 }
 
