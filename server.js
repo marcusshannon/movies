@@ -10,14 +10,6 @@ var bodyParser = require('body-parser');
 var exphbs  = require('express-handlebars');
 var constants = require('./constants.js')
 
-// var schema = require('normalizr').schema
-// // var normalize = require('normalizr').normalize
-// // const user = new schema.Entity('users');
-// // const user = new schema.Entity('movies');
-
-
-console.log('restart')
-
 var knex = require('knex')({
   client: 'mysql',
   connection: {
@@ -36,56 +28,51 @@ const store = new KnexSessionStore({
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
-
-
 app.use(express.static('dist'));
 app.use(bodyParser.json());
-app.use(session({secret: 'movies', cookie: {maxAge: 31536000}, resave: false, saveUninitialized: false, store: store}));
+app.use(session({secret: 'movies', cookie: {maxAge: 315360000}, resave: false, saveUninitialized: false, store: store}));
 app.use(passport.initialize());
 app.use(passport.session());
 
+var callRaw = (statement, params) => {
+  return knex.raw(statement, params)
+  .then(raw => raw[0]);
+}
 
 //Auth
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
-
-passport.deserializeUser(function(user, done) {
-  done(null, user);
-});
-
-passport.use(new TwitterStrategy({
+const TWITTER_CONFIG = {
   consumerKey: "LH5BoPe4Z57ehizHTTddknTiW",
   consumerSecret: "T7dvsB31yEdPyXrnPtPigUHaCFP8ORl9MbncL5mWtJczqv00Rw",
   callbackURL: "http://localhost:3000/login/callback"
-},
-function(token, tokenSecret, profile, done) {
-  knex.raw('SELECT * FROM user WHERE id = ?', [profile.id])
-  .then(function(data) {
-    data = data[0]
+}
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.use(new TwitterStrategy(TWITTER_CONFIG, (token, tokenSecret, profile, done) => {
+  callRaw('SELECT * FROM user WHERE id = ?', [profile.id])
+  .then(data => {
     if (data.length == 0) {
       knex.raw('INSERT INTO user VALUES (?, ?, ?, ?)', [profile.id, profile.username, profile.displayName, profile.photos[0].value])
-      .then(function(data) {
-        return done(null, {id: profile.id, username: profile.username, name: profile.displayName, image_url: profile.photos[0].value});
-      })
-      .catch(function(err) {
-        return done(err);
-      });
+      .then(() => done(null, {id: profile.id, username: profile.username, name: profile.displayName, image_url: profile.photos[0].value}))
+      .catch(err => done(err))
     }
-    else if (data[0].id == profile.id) {
-      return done(null, {id: profile.id, username: profile.username, name: profile.displayName, image_url: profile.photos[0].value});
+    else {
+      done(null, {id: profile.id, username: profile.username, name: profile.displayName, image_url: profile.photos[0].value});
     }
   })
-  .catch(function(err) {
-    return done(err);
-  });
-}
-));
+  .catch(err => done(err))
+}));
 
 app.get('/login', passport.authenticate('twitter'));
 
-app.get('/login/callback', passport.authenticate('twitter', {failureRedirect: '/' }), function(req, res) {
-  res.redirect('/user/' + req.user.username);
+app.get('/login/callback', passport.authenticate('twitter', {failureRedirect: '/' }), (req, res) => {
+  res.redirect('/recommendations');
 });
 
 app.get('/logout', (req, res) => {
@@ -94,434 +81,176 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/api/recent', (req, res) => {
-  knex('movie').orderBy('created', 'DESC').limit(18)
+  knex('movie').orderBy('created', 'DESC').limit(14)
   .then(data => res.send(data))
   .catch(err => res.sendStatus(500));
 });
 
-app.get('/api/recommendations', function(req, res) {
+app.put('/api/recommend/:id', (req, res) => {
   if (req.user) {
-    knex.raw(constants.GET_RECOMMENDATIONS, [req.user.id])
-    .then(raw => {
-      var response = {
-        recommendations: {
-          byId: {},
-          allIds: []
-        },
-        movies: {
-          byId: {},
-          allIds: []
+    callRaw(constants.RECOMMEND, [req.params.id, req.user.id])
+    .then(data => res.sendStatus(200))
+    .catch(err => res.sendStatus(500));
+  }
+  else {
+    res.sendStatus(403);
+  }
+});
+
+var rawSQL = (statement, params) => {
+  return knex.raw(statement, params)
+  .then(raw => raw[0]);
+}
+
+var getFollowing = (id, response) => {
+  return rawSQL(constants.GET_FOLLOWING, [id])
+  .then(rows => {
+    for (var i in rows) {
+      var row = rows[i];
+      if (!(row.leader in response.users)) {
+        response.users[row.leader] = {
+          id: row.leader,
+          username: row.username,
+          name: row.name,
+          image_url: row.image_url,
         }
-      };
-      var rows = raw[0];
-      for (var i in rows) {
-        var row = rows[i];
-        response.recommendations.byId[row.recommendation_id] = {
-          id: row.recommendation_id,
-          user: row.user,
-          movie: row.movie,
-          recommend: row.recommend,
-          created: row.recommendation_created
-        };
-        response.recommendations.allIds.push(row.recommendation_id)
-        response.movies.byId[row.movie_id] = {
+      }
+      response.relations.push({leader: row.leader, follower: row.follower})
+    }
+    return response;
+  });
+}
+
+var getFollowers = (id, response) => {
+  return rawSQL(constants.GET_FOLLOWERS, [id])
+  .then(rows => {
+    for (var i in rows) {
+      var row = rows[i];
+      if (!(row.follower in response.users)) {
+        response.users[row.follower] = {
+          id: row.follower,
+          username: row.username,
+          name: row.name,
+          image_url: row.image_url,
+        }
+      }
+      response.relations.push({leader: row.leader, follower: row.follower})
+    }
+    return response;
+  });
+}
+
+var getRecommendations = (id, response) => {
+  return rawSQL(constants.GET_RECOMMENDATIONS, [id])
+  .then(rows => {
+    for (var i in rows) {
+      var row = rows[i];
+      if (!(row.movie_id in response.movies)) {
+        response.movies[row.movie_id] = {
           id: row.movie_id,
           title: row.title,
           image_url: row.image_url,
           created: row.movie_created
+        };
+      }
+      response.views.push(
+        {
+          key: {
+            user: row.user,
+            movie: row.movie_id
+          },
+          value: {
+            user: row.user,
+            movie: row.movie_id,
+            viewed: row.recommendation_created,
+            recommend: row.recommend
+          }
         }
-        response.movies.allIds.push(row.movie_id)
-      }
-      res.send(response);
-    })
-  }
-  else {
-    res.sendStatus(401);
-  }
-});
-
-app.get('/api/followers', function(req, res) {
-  if (req.user) {
-    knex.raw('select * from user where id in (select follower from follow where leader = ?)', [req.user.id])
-    .then(function(data) {
-      res.send(data[0]);
-    });
-  }
-  else {
-    res.sendStatus(401);
-  }
-});
-
-app.get('/api/following', function(req, res) {
-  if (req.user) {
-    knex.raw('select * from user where id in (select leader from follow where follower = ?)', [req.user.id])
-    .then(function(data) {
-      res.send(data[0]);
-    });
-  }
-  else {
-    res.sendStatus(401);
-  }
-});
-
-app.get('/api/movies', function(req, res) {
-  if (req.user) {
-    knex.raw('SELECT watched.id, watched.movie, watched.recommend, movie.title, movie.image_url FROM watched inner join movie on watched.movie = movie.id where user = ? ORDER BY watched.created DESC', [req.user.id])
-    .then(data => {res.send(data[0])});
-  }
-  else {
-    res.sendStatus(401);
-  }
-})
-
-app.put('/api/recommend/:id', (req, res) => {
-  if (req.user) {
-    knex.raw('UPDATE watched set recommend = NOT recommend where id = ? and user = ?', [req.params.id, req.user.id])
-    .then(data => {res.sendStatus(200)})
-    .catch(err => {res.send(500)});
-  }
-  else {
-    res.sendStatus(401);
-  }
-});
-
-var initialState = (id) => {
-  var response = {
-    currentUserFollowing: {
-      byId: {},
-      allIds: []
-    },
-    currentUserFollowers: {
-      byId: {},
-      allIds: []
-    },
-    currentUserWatched: {
-      byId: {},
-      allIds: []
-    },
-    following: {
-      byId: {},
-      allIds: []
-    },
-    followers: {
-      byId: {},
-      allIds: []
-    },
-    users: {
-      byId: {},
-      allIds: []
-    },
-    recommendations: {
-      byId: {},
-      allIds: []
-    },
-    movies: {
-      byId: {},
-      allIds: []
-    },
-    watched: {
-      byId: {},
-      allIds: []
-    }
-  };
-  return knex.raw(constants.GET_FOLLOWING, [id])
-  .then(raw => {
-    var rows = raw[0];
-
-    for (var i in rows) {
-      var row = rows[i];
-      response.following.byId[row.follow_id] = {
-        id: row.follow_id,
-        user: row.leader
-      };
-      response.following.allIds.push(row.follow_id)
-      response.users.byId[row.user_id] = {
-        id: row.user_id,
-        username: row.username,
-        name: row.name,
-        image_url: row.image_url
-      }
-      response.users.allIds.push(row.user_id)
+       )
     }
     return response;
   })
-  .then(response => {
-    return knex.raw(constants.GET_RECOMMENDATIONS, [id])
-    .then(raw => {
-      var rows = raw[0];
-      for (var i in rows) {
-        var row = rows[i];
-        response.recommendations.byId[row.recommendation_id] = {
-          id: row.recommendation_id,
-          user: row.user,
-          movie: row.movie,
-          recommend: row.recommend,
-          created: row.recommendation_created
-        };
-        response.recommendations.allIds.push(row.recommendation_id)
-        if (!(row.movie_id in response.movies.byId)) {
-          response.movies.byId[row.movie_id] = {
-            id: row.movie_id,
-            title: row.title,
-            image_url: row.image_url,
-            created: row.movie_created
-          }
-          response.movies.allIds.push(row.movie_id)
-        }
-      }
-      return response;
-    })
-  })
-  .then(response => {
-    return knex.raw(constants.GET_FOLLOWERS, [id])
-    .then(raw => {
-      var rows = raw[0];
-      for (var i in rows) {
-        var row = rows[i];
-        response.followers.byId[row.follow_id] = {
-          id: row.follow_id,
-          user: row.follower,
-        };
-        response.followers.allIds.push(row.follow_id)
-        if (!(row.user_id in response.users.byId)) {
-          response.users.byId[row.user_id] = {
-            id: row.user_id,
-            username: row.username,
-            name: row.name,
-            image_url: row.image_url,
-          }
-          response.users.allIds.push(row.user_id)
-        }
-      }
-      return response;
-    })
-  })
-  .then(response => {
-    return knex.raw(constants.GET_MOVIES, [id])
-    .then(raw => {
-      var rows = raw[0];
-      for (var i in rows) {
-        var row = rows[i];
-        response.watched.byId[row.watched_id] = {
-          id: row.watched_id,
-          movie: row.movie,
-          recommend: row.recommend,
-          created: row.watched_created
-        };
-        response.watched.allIds.push(row.watched_id)
-        if (!(row.movie_id in response.movies.byId)) {
-          response.movies.byId[row.movie_id] = {
-            id: row.movie_id,
-            title: row.title,
-            image_url: row.image_url,
-            created: row.movie_created
-          }
-          response.movies.allIds.push(row.movie_id)
-        }
-      }
-      return response;
-    })
-  })
 }
 
-// watch a movie
-app.post('/api/movies', function(req, res) {
-  if (req.user) {
-    knex.raw('INSERT IGNORE INTO movie (id, title, image_url) VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
-    .then(() => {
-      knex.raw('INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)', [req.user.id, req.body.id])
-      .then(data => {
-        if (data[0].affectedRows == 0) {
-          res.send({error: "Exists"});
-        }
-        else {
-          res.send({
-            watched: {
-              byId: {
-                [data[0].insertId]: {
-                  created: Date.now(),
-                  id: data[0].insertId,
-                  movie: req.body.id,
-                  recommend: 0
-                }
-              },
-              allIds: [data[0].insertId]
-            },
-            movies: {
-              byId: {
-                [req.body.id]: {
-                  created: Date.now(),
-                  id: req.body.id,
-                  title: req.body.title,
-                  image_url: req.body.poster_path
-                }
-              },
-              allIds: [req.body.id]
-            }
-          })
-        }
-      })
-    })
-  }
-  else {
-    res.sendStatus(403);
-  }
-})
-
-app.delete('/api/movies/:id', function(req, res) {
-  if (req.user) {
-    knex.raw('DELETE IGNORE FROM watched where id = ? and user = ?', [req.params.id, req.user.id])
-    .then(() => {res.sendStatus(200)})
-    .catch(err => {res.sendStatus(500)});
-  }
-  else {
-    res.sendStatus(403);
-  }
-})
-
-app.get('/api/user/:id/movies', function(req, res) {
-  console.log('hit')
-  knex.raw('select movie.* from watched join movie on movie = movie.id where user = ? order by watched.created desc', [req.params.id])
-  .then(data => {res.send(data[0])});
-});
-
-var getSQL = (statement, id) => {
-  return knex.raw(statement, [id])
-  .then(raw => raw[0]);
-}
-
-
-app.get('/api/user/:id', (req, res) => {
-  var response = {
-    currentUserFollowing: {
-      byId: {},
-      allIds: []
-    },
-    currentUserFollowers: {
-      byId: {},
-      allIds: []
-    },
-    users: {
-      byId: {},
-      allIds: []
-    },
-    movies: {
-      byId: {},
-      allIds: []
-    },
-    currentUserWatched: {
-      byId: {},
-      allIds: []
-    }
-  };
-  getSQL(constants.GET_FOLLOWING, req.params.id)
+var getMovies = (id, response) => {
+  return rawSQL(constants.GET_MOVIES, [id])
   .then(rows => {
     for (var i in rows) {
-      var row = rows[i];
-      response.currentUserFollowing.byId[row.follow_id] = {
-        id: row.follow_id,
-        user: row.leader
-      };
-      response.currentUserFollowing.allIds.push(row.follow_id)
-      if (!(row.user_id in response.users.byId)) {
-        response.users.byId[row.user_id] = {
-          id: row.user_id,
-          username: row.username,
-          name: row.name,
-          image_url: row.image_url
-        }
-        response.users.allIds.push(row.user_id)
+      var row = rows[i]
+      if (!(row.movie_id in response.movies)) {
+        response.movies[row.movie_id] = {
+          id: row.movie_id,
+          title: row.title,
+          image_url: row.image_url,
+          created: row.movie_created
+        };
       }
+      response.views.push(
+        {
+          key: {
+            user: row.user,
+            movie: row.movie_id
+          },
+          value: {
+            user: row.user,
+            movie: row.movie_id,
+            viewed: row.watched_created,
+            recommend: row.recommend
+          }
+        }
+      )
     }
     return response;
   })
-  .then(response => {
-    return getSQL(constants.GET_FOLLOWERS, req.params.id)
-    .then(rows => {
-      for (var i in rows) {
-        var row = rows[i];
-        response.currentUserFollowers.byId[row.follow_id] = {
-          id: row.follow_id,
-          user: row.follower,
-        };
-        response.currentUserFollowers.allIds.push(row.follow_id)
-        if (!(row.user_id in response.users.byId)) {
-          response.users.byId[row.user_id] = {
-            id: row.user_id,
-            username: row.username,
-            name: row.name,
-            image_url: row.image_url,
-          }
-          response.users.allIds.push(row.user_id)
-        }
-      }
-      return response;
-    })
-  })
-  .then(response => {
-    return getSQL(constants.GET_MOVIES, req.params.id)
-    .then(rows => {
-      for (var i in rows) {
-        var row = rows[i];
-        response.currentUserWatched.byId[row.watched_id] = {
-          id: row.watched_id,
-          movie: row.movie,
-          recommend: row.recommend,
-          created: row.watched_created
-        };
-        response.currentUserWatched.allIds.push(row.watched_id)
-        if (!(row.movie_id in response.movies.byId)) {
-          response.movies.byId[row.movie_id] = {
-            id: row.movie_id,
-            title: row.title,
-            image_url: row.image_url,
-            created: row.movie_created
-          }
-          response.movies.allIds.push(row.movie_id)
-        }
-      }
-      res.send(response);
-    })
-  })
+}
+
+var addMe = (user, response) => {
+  response.me = user.id;
+  if (!(user.id in response.users)) {
+    response.users[user.id] = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      image_url: user.image_url,
+    }
+  }
+  return response;
+}
+
+var initialState = () => {
+  return {
+    users: {},
+    movies: {},
+    relations: [],
+    views: []
+  };
+}
+
+app.delete('/api/movies/:id', (req, res) => {
+  if (req.user) {
+    knex.raw('DELETE IGNORE FROM watched where movie = ? and user = ?', [req.params.id, req.user.id])
+    .then(() => res.sendStatus(200))
+    .catch(err => res.sendStatus(500));
+  }
+  else {
+    res.sendStatus(403);
+  }
 })
 
-// watch a movie
-app.post('/api/movies', function(req, res) {
+app.get('/api/user/:id', (req, res) => {
+  var id = req.params.id
+  getMovies(id, initialState())
+  .then(response => getFollowing(id, response))
+  .then(response => getFollowers(id, response))
+  .then(response => res.send(response));
+})
+
+app.post('/api/movies', (req, res) => {
   if (req.user) {
-    knex.raw('INSERT IGNORE INTO movie (id, title, image_url) VALUES(?, ?, ?)', [req.body.id, req.body.title, req.body.poster_path])
+    callRaw(constants.INSERT_MOVIE, [req.body.id, req.body.title, req.body.poster_path])
     .then(() => {
-      knex.raw('INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)', [req.user.id, req.body.id])
-      .then(data => {
-        if (data[0].affectedRows == 0) {
-          res.send({error: "Exists"});
-        }
-        else {
-          res.send({
-            watched: {
-              byId: {
-                [data[0].insertId]: {
-                  created: Date.now(),
-                  id: data[0].insertId,
-                  movie: req.body.id,
-                  recommend: 0
-                }
-              },
-              allIds: [data[0].insertId]
-            },
-            movies: {
-              byId: {
-                [req.body.id]: {
-                  created: Date.now(),
-                  id: req.body.id,
-                  title: req.body.title,
-                  image_url: req.body.poster_path
-                }
-              },
-              allIds: [req.body.id]
-            }
-          })
-        }
-      })
+      knex.raw(constants.WATCH, [req.user.id, req.body.id])
+      .then(() => res.sendStatus(200))
     })
   }
   else {
@@ -529,28 +258,22 @@ app.post('/api/movies', function(req, res) {
   }
 });
 
-app.delete('/api/unfollow/:id', function(req, res) {
+
+app.delete('/api/relations/:id', (req, res) => {
   if (req.user) {
-    knex.raw('DELETE FROM follow where id = ? and follower = ?', [req.params.id, req.user.id])
-    .then(() => {res.sendStatus(200)})
-    .catch((err) => {res.sendStatus(500)})
+    knex.raw(constants.UNFOLLOW, [req.params.id, req.user.id])
+    .then(() => res.sendStatus(200))
+    .catch(err => res.sendStatus(500))
   }
   else {
     res.sendStatus(403);
   }
 })
 
-app.post('/api/follow/:id', (req, res) => {
+app.post('/api/relations/:id', (req, res) => {
   if (req.user) {
-    knex.raw('INSERT IGNORE INTO follow (leader, follower) VALUES (?, ?)', [req.params.id, req.user.id])
-    .then(data => {
-      if (data[0].insertId) {
-        res.send({id: data[0].insertId})
-      }
-      else {
-        res.send({error: "Exists"});
-      }
-    })
+    callRaw(constants.FOLLOW, [req.params.id, req.user.id])
+    .then(data => res.sendStatus(200))
     .catch(err => res.sendStatus(500))
   }
   else {
@@ -559,44 +282,30 @@ app.post('/api/follow/:id', (req, res) => {
 })
 
 // PAGES
-app.get('/recommendations', function(req, res) {
+app.get('/recommendations', (req, res) => {
   if (req.user) {
-    initialState(req.user.id).then(response => {
-      res.render('state', {initialState: JSON.stringify(Object.assign(response, {me: req.user})).replace(/</g, '\\u003c')});
-    });
+    var id = req.user.id;
+    getMovies(id, addMe(req.user, initialState()))
+    .then(response => getFollowers(id, response))
+    .then(response => getFollowing(id, response))
+    .then(response => getRecommendations(id, response))
+    .then(response => res.render('state', {initialState: JSON.stringify(response).replace(/</g, '\\u003c')}))
   }
   else {
     res.redirect('/');
   }
 })
 
-// app.get('/user/:username', function(req, res) {
-//   if (req.user && req.user.username == req.params.username) {
-//     res.redirect('/recommendations');
-//   }
-//   else {
-//     knex('user').where('username', req.params.username)
-//     .then(data => {
-//       if (data.length == 0) {
-//         res.redirect('/404');
-//       }
-//       else {
-//         res.render('user', {initialState: JSON.stringify({user: data[0]}).replace(/</g, '\\u003c')});
-//       }
-//     })
-//   }
-// });
-
-app.get('/', function(req, res) {
+app.get('/', (req, res) => {
   if (req.user) {
     res.redirect('/recommendations');
   }
   else {
-    res.sendFile(path.join(__dirname, '/dist/main.html'));
+    res.render('state', {initialState: JSON.stringify(initialState()).replace(/</g, '\\u003c')})
   }
 });
 
-app.get('*', function(req, res) {
+app.get('*', (req, res) => {
   res.redirect('/')
 })
 

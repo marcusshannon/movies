@@ -1,98 +1,32 @@
+import { Map, OrderedSet, OrderedMap } from 'immutable';
+import moment from 'moment';
+
 export const root = (state = [], action) => {
   switch (action.type) {
-    case 'ADD_MOVIE':
-      return Object.assign({}, state, {
-        movies: Object.assign({}, state.movies, {
-          byId: _.merge({}, state.movies.byId, action.movies.byId),
-          allIds: [...action.movies.allIds, ...state.movies.allIds]
-        }),
-        watched: Object.assign({}, state.watched, {
-          byId: _.merge({}, state.watched.byId, action.watched.byId),
-          allIds: [...action.watched.allIds, ...state.watched.allIds]
-        }),
-      });
-    case 'RECEIVE_MOVIES':
-      return Object.assign({}, state, {
-        movies: _.merge({}, state.movies, action.movies),
-        watched: _.merge({}, state.watched, action.watched)
-      });
-    case 'RECEIVE_USER_MOVIES':
-      return Object.assign({}, state, {
-        fetchedUserMovies: true,
-        userMovies: action.movies
-      });
-    case 'RECEIVE_RECOMMENDATIONS':
-      return Object.assign({}, state, {
-        recommendations: action.recommendations,
-        movies: _.merge({}, state.movies, action.movies)
-      });
-    case 'RECEIVE_USER':
-      return Object.assign({}, state, {
-        currentUserFollowing: action.currentUserFollowing,
-        currentUserFollowers: action.currentUserFollowers,
-        currentUserWatched: action.currentUserWatched,
-        movies: Object.assign({}, state.movies, {
-          byId: _.merge({}, state.movies.byId, action.movies.byId),
-          allIds: [...state.movies.allIds, ...action.movies.allIds]
-        }),
-        users: Object.assign({}, state.users, {
-          byId: _.merge({}, state.users.byId, action.users.byId),
-          allIds: [...state.users.allIds, ...action.users.allIds]
-        }),
-      });
-    case 'RECEIVE_FOLLOWERS':
-      return Object.assign({}, state, {
-        followers: action.followers,
-        fetchedFollowers: true
-      });
-    case 'RECEIVE_FOLLOWING':
-      return Object.assign({}, state, {
-        following: action.following,
-        fetchedFollowing: true
-      });
-    case 'RECOMMEND':
-      return Object.assign({}, state, {
-        watched: Object.assign({}, state.watched, {
-          byId: Object.assign({}, state.watched.byId, {
-            [action.id]: Object.assign({}, state.watched.byId[action.id], {
-              recommend: !state.watched.byId[action.id].recommend
-            })
-          })
-        })
-      })
-    case 'UNFOLLOW':
-      return Object.assign({}, state, {
-        following: Object.assign({}, state.following, {
-          byId: _.omit(state.following.byId, [action.id]),
-          allIds: [
-            ...state.following.allIds.slice(0, action.i),
-            ...state.following.allIds.slice(action.i + 1)
-          ]
-        })
-      });
-    case 'FOLLOW':
-      return Object.assign({}, state, {
-        following: Object.assign({}, state.following, {
-          byId: Object.assign({}, state.following.byId, {
-            [action.id]: {id: action.id, user: action.user}
-          }),
-          allIds: [action.id, ...state.following.allIds]
-        })
-      });
+    case 'UNFOLLOW_USER':
+      return state.set('relations', state.get('relations').delete(Map({leader: action.id, follower: state.get('me')})))
+    case 'FOLLOW_USER':
+      return state.set('relations', state.get('relations').add(Map({leader: action.id, follower: state.get('me')})))
     case 'DELETE_MOVIE':
-      return Object.assign({}, state, {
-        watched: Object.assign({}, state.watched, {
-          byId: _.omit(state.watched.byId, [action.id]),
-          allIds: [
-            ...state.watched.allIds.slice(0, action.i),
-            ...state.watched.allIds.slice(action.i + 1)
-          ]
-        })
-      });
-    case 'SET_USER':
-      return Object.assign({}, state, {
-        currentUser: action.id
-      });
+      return state.set('views', state.get('views').delete(Map({movie: action.id, user: state.get('me')})))
+    case 'ADD_MOVIE':
+      return state.set('movies', state.get('movies').set(action.movie.id.toString(), Map({
+        id: action.movie.id,
+        title: action.movie.title,
+        image_url: action.movie.poster_path,
+        created: new Date()
+      })))
+    case 'VIEW_MOVIE':
+      return state.set('views', state.get('views').set(Map({user: state.get('me'), movie: action.id}), Map({user: state.get('me'), movie: action.id, viewed: new Date(), recommend: 0})))
+    case 'RECOMMEND_MOVIE':
+      var path = ['views', Map({user: state.get('me'), movie: action.id})]
+      var recommend = !state.getIn([...path, 'recommend'])
+      return state.setIn(path, state.getIn(path).set('recommend', recommend))
+    case 'SET_CURRENT_USER':
+      return state.set('currentUser', action.id)
+    case 'RECEIVE_CURRENT_USER':
+      var merged = state.mergeDeep(action.payload)
+      return merged.set('views', merged.get('views').sort((a, b) => Date(a.viewed) < Date(b.viewed)))
     default:
       return state
   }

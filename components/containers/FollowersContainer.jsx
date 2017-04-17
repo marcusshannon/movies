@@ -1,34 +1,26 @@
 import React from 'react';
 import { Followers } from '../presentationals/Followers.jsx';
-import { unfollow, follow } from '../../actions/index.js'
+import { unfollowUser, followUser, setUser } from '../../actions/index.js'
 import { connect } from 'react-redux'
-
+import { getFollowers } from '../../selectors/index.js'
 
 class FollowersContainer extends React.Component {
   render() {
-    return <Followers followers={this.props.followers} following={this.props.following} unfollow={this.props.unfollow} follow={this.props.follow}/>;
+    return <Followers followers={this.props.followers} followUser={this.props.followUser} unfollowUser={this.props.unfollowUser} setUser={this.props.setUser}/>;
   }
 }
 
 const mapStateToProps = (state) => {
-  var following = {};
-  state.following.allIds.map((id, i) => {
-    var follow = state.following.byId[id]
-    Object.assign(following, {
-      [follow.user]: {id: follow.id, user: follow.user, index: i}
-
-    })
-  })
   return {
-    followers: state.followers.allIds.map(id => state.users.byId[state.followers.byId[id].user]),
-    following: following
+    followers: getFollowers(state)
   }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    follow: (id) => {dispatch(follow(id))},
-    unfollow: (id, i) => {dispatch(unfollow(id, i))}
+    unfollowUser: id => dispatch(unfollowUser(id)),
+    followUser: id => dispatch(followUser(id)),
+    setUser: id => dispatch(setUser(id))
   }
 }
 

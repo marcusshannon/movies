@@ -2,25 +2,17 @@ import React from 'react';
 import { Recommendations } from '../presentationals/Recommendations.jsx';
 import { connect } from 'react-redux'
 import { fetchRecommendations } from '../../actions/index.js'
+import { getRecommendations } from '../../selectors/index.js'
 
 class RecommendationsContainer extends React.Component {
-  componentWillMount() {
-    this.props.fetchRecommendations();
-  }
-
   render() {
     return <Recommendations recommendations={this.props.recommendations}/>
   }
 }
 
-const mapStateToProps = (state) => {
+const mapStateToProps = state => {
   return {
-    recommendations: state.recommendations.allIds.map(id => {
-      return {
-        movie: state.movies.byId[state.recommendations.byId[id].movie],
-        user: state.users.byId[state.recommendations.byId[id].user]
-      }
-    })
+    recommendations: getRecommendations(state)
   }
 }
 

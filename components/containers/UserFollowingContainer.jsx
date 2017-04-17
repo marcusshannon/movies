@@ -1,29 +1,29 @@
 import React from 'react';
-import { Following } from '../presentationals/Following.jsx';
-import { unfollow, setUser } from '../../actions/index.js'
+import { Followers } from '../presentationals/Followers.jsx';
+import { unfollowUser, followUser, setUser } from '../../actions/index.js';
+import { getCurrentUserFollowing, getCurrentUser } from '../../selectors/index.js'
 import { connect } from 'react-redux'
 
-export class UserFollowingContainer extends React.Component {
+class UserFollowingContainer extends React.Component {
   render() {
-    return <Following following={this.props.following} unfollow={this.props.unfollow} setUser={this.props.setUser}/>;
+    var title = (<h1>{this.props.user && this.props.user.name + " is Following"}</h1>)
+    return <Followers title={title} me={this.props.me} followers={this.props.following} user={this.props.user} followUser={this.props.followUser} unfollowUser={this.props.unfollowUser} setUser={this.props.setUser}/>;
   }
 }
 
-const mapStateToProps = (state) => {
+const mapStateToProps = state => {
   return {
-    following: state.currentUserFollowing.allIds.map(id => {
-      return {
-        user: state.users.byId[state.currentUserFollowing.byId[id].user],
-        meta: state.currentUserFollowing.byId[id]
-      }
-    })
+    following: getCurrentUserFollowing(state),
+    user: getCurrentUser(state),
+    me: state.get('me')
   }
 }
 
 const mapDispatchToProps = dispatch => {
   return {
-    unfollow: (user, i) => {dispatch(unfollow(user, i))},
-    setUser: (id) => {dispatch(setUser(id))}
+    unfollowUser: id => dispatch(unfollowUser(id)),
+    followUser: id => dispatch(followUser(id)),
+    setUser: id => dispatch(setUser(id))
   }
 }
 

@@ -1,9 +1,7 @@
 const GET_FOLLOWING =
 `SELECT
-follow.id AS follow_id,
 leader,
 follower,
-user.id   AS user_id,
 username,
 name,
 image_url
@@ -13,10 +11,8 @@ WHERE follower = ?`
 
 const GET_FOLLOWERS =
 `SELECT
-follow.id AS follow_id,
 leader,
 follower,
-user.id   AS user_id,
 username,
 name,
 image_url
@@ -26,25 +22,21 @@ WHERE leader = ?`
 
 const GET_MOVIES =
 `SELECT
-watched.id      AS watched_id,
-user,
-movie,
-recommend,
-watched.created AS watched_created,
-movie.id        AS movie_id,
-title,
-image_url,
-movie.created   AS movie_created
+  user,
+  movie.id AS movie_id,
+  recommend,
+  watched.created AS watched_created,
+  title,
+  image_url,
+  movie.created   AS movie_created
 FROM watched
-JOIN movie ON movie = movie.id
+  JOIN movie ON movie = movie.id
 WHERE user = ?
-ORDER BY watched_created DESC`
+ORDER BY watched_created`
 
 const GET_RECOMMENDATIONS =
 `SELECT
-watched.id      AS recommendation_id,
 user,
-movie,
 recommend,
 watched.created AS recommendation_created,
 movie.id        AS movie_id,
@@ -56,34 +48,29 @@ JOIN movie ON movie = movie.id
 WHERE user IN (SELECT leader
 FROM follow
 WHERE follower = ?) AND recommend = 1
-ORDER BY recommendation_created DESC`
+ORDER BY recommendation_created`
 
-const RESPONSE = {
-  currentUserFollowing: {
-    byId: {},
-    allIds: []
-  },
-  currentUserFollowers: {
-    byId: {},
-    allIds: []
-  },
-  users: {
-    byId: {},
-    allIds: []
-  },
-  movies: {
-    byId: {},
-    allIds: []
-  },
-  currentUserWatched: {
-    byId: {},
-    allIds: []
-  }
-};
+const RECOMMEND =
+`UPDATE watched
+SET recommend = NOT recommend
+WHERE movie = ? AND user = ?`
+
+const INSERT_MOVIE = 'INSERT IGNORE INTO movie (id, title, image_url) VALUES (?, ?, ?)'
+
+const WATCH = 'INSERT IGNORE INTO watched (user, movie) VALUES (?, ?)'
+
+const FOLLOW = 'INSERT IGNORE INTO follow (leader, follower) VALUES (?, ?)'
+
+const UNFOLLOW = 'DELETE FROM follow WHERE leader = ? and follower = ?'
 
 module.exports = {
-  GET_FOLLOWING: GET_FOLLOWING,
-  GET_FOLLOWERS: GET_FOLLOWERS,
-  GET_MOVIES: GET_MOVIES,
-  GET_RECOMMENDATIONS: GET_RECOMMENDATIONS
+  GET_FOLLOWING,
+  GET_FOLLOWERS,
+  GET_MOVIES,
+  GET_RECOMMENDATIONS,
+  RECOMMEND,
+  INSERT_MOVIE,
+  WATCH,
+  FOLLOW,
+  UNFOLLOW,
 }

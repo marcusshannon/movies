@@ -2,20 +2,23 @@ import React from 'react';
 import { Link } from 'react-router'
 
 export const Following = (props) => {
-  const formatFollowing = (following, i) => {
+  const formatFollowing = (user, i) => {
     return (
-      <div className="people" key={i}>
-        <div>
-          <img className="ui avatar image" src={following.user.image_url}/>
-          {following.user.name} <Link onClick={() => props.setUser(following.user.id)} to={"/user/" + following.user.username + "/movies"}>@{following.user.username}</Link>
+      <div className="item" key={i}>
+        <img className="ui avatar image" src={user.image_url}/>
+        <div className="content">
+          <div className="header">{user.name}</div>
+          <Link onClick={() => props.setUser(user.id)} className="description" to={"/user/" + user.username + "/movies"}>@{user.username}</Link>
         </div>
-        <button className="ui red mini right floated button" onClick={() => props.unfollow(following.meta.id, i)}>Unfollow</button>
+        <button className="ui red small right floated button" onClick={() => props.unfollowUser(user.id)}>Unfollow</button>
       </div>
     );
   }
   return (
     <div className="ui container">
-      {props.following.map(formatFollowing)}
-    </div>
+      <div className="ui list">
+        {props.following.map(formatFollowing)}
+      </div>
+  </div>
   );
 }

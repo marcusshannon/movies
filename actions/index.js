@@ -1,52 +1,8 @@
-export const receiveMovies = (movies) => {
-  return {
-    type: 'RECEIVE_MOVIES',
-    movies
-  }
-}
+import { Map, OrderedSet, OrderedMap } from 'immutable';
 
-export const receiveUserMovies = (movies) => {
-  return {
-    type: 'RECEIVE_USER_MOVIES',
-    movies
-  }
-}
-
-export const receiveRecommendations = (json) => {
-  return {
-    type: 'RECEIVE_RECOMMENDATIONS',
-    recommendations: json.recommendations,
-    movies: json.movies
-  }
-}
-
-export const receiveFollowers = (followers) => {
-  return {
-    type: 'RECEIVE_FOLLOWERS',
-    followers
-  }
-}
-
-export const receiveFollowing = (following) => {
-  return {
-    type: 'RECEIVE_FOLLOWING',
-    following
-  }
-}
-
-export const fetchMovies = () => {
+export const fetchUser = username => {
   return (dispatch, getState) => {
-    if (!getState().fetchedMovies) {
-      return fetch('/api/movies', {credentials: 'include'})
-        .then(res => res.json())
-        .then(json => {dispatch(receiveMovies(json))});
-    }
-  }
-}
-
-export const fetchUser = () => {
-  return (dispatch, getState) => {
-    if (!getState().fetchedUserMovies) {
+    if (getState().fetchUser) {
       return fetch('/api/user/' + getState().currentUser, {credentials: 'include'})
         .then(res => res.json())
         .then(json => dispatch(receiveUserMovies(json)));
@@ -64,92 +20,52 @@ export const fetchRecommendations = () => {
   }
 }
 
-export const fetchFollowers = () => {
-  return (dispatch, getState) => {
-    if (!getState().fetchedFollowers) {
-      return fetch('/api/followers', {credentials: 'include'})
-          .then(res => res.json())
-          .then(json => {dispatch(receiveFollowers(json))});
-    }
-  }
+export const viewMovie = movie => (dispatch, getState) => {
+  if (getState().get('views').has(Map({movie: movie.id, user: getState().get('me')}))) return;
+  if (!getState().get('movies').has(movie.id.toString())) dispatch({type: 'ADD_MOVIE', movie});
+  dispatch({type: 'VIEW_MOVIE', id: movie.id})
+  fetch('/api/movies', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(movie)
+  });
 }
 
-export const fetchFollowing = () => {
-  return (dispatch, getState) => {
-    if (!getState().fetchedFollowing) {
-      return fetch('/api/following', {credentials: 'include'})
-          .then(res => res.json())
-          .then(json => {dispatch(receiveFollowing(json))});
-    }
-  }
+export const deleteMovie = id => dispatch => {
+  dispatch({type: 'DELETE_MOVIE', id})
+  fetch('/api/movies/' + id, {method: 'DELETE', credentials: 'include'})
 }
 
-export const addMovie = (movie) => {
-  return (dispatch, getState) => {
-      return fetch('/api/movies', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(movie)
-    })
+export const unfollowUser = id => dispatch => {
+  dispatch({type: 'UNFOLLOW_USER', id})
+  fetch('/api/relations/' + id, {method: 'DELETE', credentials: 'include'})
+}
+
+export const followUser = id => dispatch => {
+  dispatch({type: 'FOLLOW_USER', id})
+  fetch('/api/relations/' + id, {method: 'POST', credentials: 'include'})
+}
+
+export const recommendMovie = id => dispatch => {
+  dispatch({type: 'RECOMMEND_MOVIE', id})
+  fetch('/api/recommend/' + id, {method: 'PUT', credentials: 'include'})
+}
+
+export const setUser = id => (dispatch, getState) => {
+    if (getState().get('currentUser') == getState().getIn(['users', id, 'id'])) return;
+    dispatch({type: 'SET_CURRENT_USER', id})
+    fetch('/api/user/' + id, {credentials: 'include'})
     .then(res => res.json())
     .then(json => {
-      if (!json.error) {
-        dispatch({type: 'ADD_MOVIE', movies: json.movies, watched: json.watched})
-      }
+      var payload = Map({
+        users: Map(_.mapValues(json.users, user => Map(user))),
+        movies: Map(_.mapValues(json.movies, movie => Map(movie))),
+        relations: OrderedSet(json.relations.map(relation => Map(relation))),
+        views: OrderedMap(json.views.map(view => [Map(view.key), Map(view.value)]))
+      });
+      dispatch({type: 'RECEIVE_CURRENT_USER', payload})
     })
   }
-}
-
-export const unfollow = (id, i) => {
-  return dispatch => {
-    return fetch('/api/unfollow/' + id, {method: 'DELETE', credentials: 'include'})
-    .then(res => {
-      if (res.status == 200) dispatch({type: 'UNFOLLOW', id, i})
-    });
-  }
-}
-
-export const follow = (id) => {
-  return dispatch => {
-    return fetch('/api/follow/' + id, {method: 'POST', credentials: 'include'})
-    .then(res => res.json())
-    .then(json => {if (json.id) dispatch({type: 'FOLLOW', id: json.id, user: id})})
-  }
-}
-
-export const recommend = (id) => {
-  return dispatch => {
-    return fetch('/api/recommend/' + id, {method: 'PUT', credentials: 'include'})
-    .then(res => {
-      if (res.status == 200) dispatch({type: 'RECOMMEND', id})
-    });
-  }
-}
-
-export const deleteMovie = (id, i) => {
-  return dispatch => {
-    return fetch('/api/movies/' + id, {method: 'DELETE', credentials: 'include'})
-    .then(res => {
-      if (res.status == 200) dispatch({type: 'DELETE_MOVIE', id, i})
-    });
-  }
-}
-
-export const setUser = (id) => {
-  return dispatch => {
-    dispatch({type: 'SET_USER', id})
-    return fetch('/api/user/' + id, {credentials: 'include'})
-    .then(res => res.json())
-    .then(json => dispatch({
-      type: 'RECEIVE_USER',
-      movies: json.movies,
-      users: json.users,
-      currentUserFollowing: json.currentUserFollowing,
-      currentUserFollowers: json.currentUserFollowers,
-      currentUserWatched: json.currentUserWatched
-    }));
-  }
-}

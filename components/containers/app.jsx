@@ -4,10 +4,11 @@ import thunk from 'redux-thunk'
 import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux';
 import { createLogger } from 'redux-logger'
-import { Router, Route, IndexRoute, IndexRedirect, browserHistory } from 'react-router';
+import { Router, Route, browserHistory } from 'react-router';
+import { Map, OrderedSet, OrderedMap, Iterable } from 'immutable';
 
 import { Landing } from './Landing.jsx';
-import UserContainer from './UserContainer.jsx';
+import UserMoviesContainer from './UserMoviesContainer.jsx';
 import { Home } from './Home.jsx';
 import NavContainer from './NavContainer.jsx';
 import RecommendationsContainer from './RecommendationsContainer.jsx';
@@ -18,9 +19,22 @@ import UserFollowingContainer from './UserFollowingContainer.jsx';
 import MoviesContainer from './MoviesContainer.jsx';
 import { root } from '../../reducers/index.js';
 
-const initialState = window.__INITIAL_STATE__
-delete window.__INITIAL_STATE__
-const logger = createLogger();
+var initialState = window.__INITIAL_STATE__;
+initialState = Map({
+  ...initialState,
+  users: Map(_.mapValues(initialState.users, user => Map(user))),
+  movies: Map(_.mapValues(initialState.movies, movie => Map(movie))),
+  relations: OrderedSet(initialState.relations.map(relation => Map(relation))),
+  views: OrderedMap(initialState.views.map(view => [Map(view.key), Map(view.value)]))
+});
+delete window.__INITIAL_STATE__;
+
+const stateTransformer = (state) => {
+  if (Iterable.isIterable(state)) return state.toJS();
+  else return state;
+};
+
+const logger = createLogger({stateTransformer});
 const store = createStore(root, initialState, applyMiddleware(thunk, logger));
 
 ReactDOM.render(
@@ -31,7 +45,7 @@ ReactDOM.render(
         <Route path='/followers' component={FollowersContainer}/>
         <Route path='/following' component={FollowingContainer}/>
         <Route path='/movies' component={Home}/>
-        <Route path='/user/:username/movies' component={UserContainer}/>
+        <Route path='/user/:username/movies' component={UserMoviesContainer}/>
         <Route path='/user/:username/following' component={UserFollowingContainer}/>
         <Route path='/user/:username/followers' component={UserFollowersContainer}/>
       </Route>

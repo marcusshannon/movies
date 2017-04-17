@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Login } from '../presentationals/login.jsx';
+import { Login } from '../presentationals/Login.jsx';
 import 'whatwg-fetch';
 
 export class Landing extends React.Component {
@@ -27,7 +27,7 @@ export class Landing extends React.Component {
 
   render() {
     return (
-      <div>
+      <div className="ui container">
         <Login/>
         <h1>Recently watched</h1>
         <Movies movies={this.state.movies}/>
@@ -40,15 +40,15 @@ export class Movies extends React.Component {
 
   renderMovie(movie, i) {
     return (
-      <div key={i} className="movie">
-        <a href='http://www.imdb.com' target="_blank"><img className="poster" src={"https://image.tmdb.org/t/p/w300" + movie.image_url} width="150" height='225'/></a>
+      <div key={i} className="column">
+        <a href='http://www.imdb.com' target="_blank"><img className="ui rounded small image" src={"https://image.tmdb.org/t/p/w300" + movie.image_url}/></a>
       </div>
     );
   }
 
   render() {
     return (
-      <div className="movie-container">
+      <div className="ui seven column doubling grid">
         {this.props.movies.map(this.renderMovie)}
       </div>
     );
