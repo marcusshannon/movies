@@ -8,7 +8,7 @@ var passport = require('passport');
 var TwitterStrategy = require('passport-twitter').Strategy;
 var bodyParser = require('body-parser');
 var exphbs  = require('express-handlebars');
-var constants = require('./constants.js')
+var constants = require('./constants.js');
 
 var knex = require('knex')({
   client: 'mysql',
@@ -34,7 +34,7 @@ app.use(session({secret: 'movies', cookie: {maxAge: 315360000}, resave: false, s
 app.use(passport.initialize());
 app.use(passport.session());
 
-var callRaw = (statement, params) => {
+var rawSQL = (statement, params) => {
   return knex.raw(statement, params)
   .then(raw => raw[0]);
 }
@@ -55,7 +55,7 @@ passport.deserializeUser((user, done) => {
 });
 
 passport.use(new TwitterStrategy(TWITTER_CONFIG, (token, tokenSecret, profile, done) => {
-  callRaw('SELECT * FROM user WHERE id = ?', [profile.id])
+  rawSQL('SELECT * FROM user WHERE id = ?', [profile.id])
   .then(data => {
     if (data.length == 0) {
       knex.raw('INSERT INTO user VALUES (?, ?, ?, ?)', [profile.id, profile.username, profile.displayName, profile.photos[0].value])
@@ -88,7 +88,7 @@ app.get('/api/recent', (req, res) => {
 
 app.put('/api/recommend/:id', (req, res) => {
   if (req.user) {
-    callRaw(constants.RECOMMEND, [req.params.id, req.user.id])
+    rawSQL(constants.RECOMMEND, [req.params.id, req.user.id])
     .then(data => res.sendStatus(200))
     .catch(err => res.sendStatus(500));
   }
@@ -96,11 +96,6 @@ app.put('/api/recommend/:id', (req, res) => {
     res.sendStatus(403);
   }
 });
-
-var rawSQL = (statement, params) => {
-  return knex.raw(statement, params)
-  .then(raw => raw[0]);
-}
 
 var getFollowing = (id, response) => {
   return rawSQL(constants.GET_FOLLOWING, [id])
@@ -247,7 +242,7 @@ app.get('/api/user/:id', (req, res) => {
 
 app.post('/api/movies', (req, res) => {
   if (req.user) {
-    callRaw(constants.INSERT_MOVIE, [req.body.id, req.body.title, req.body.poster_path])
+    rawSQL(constants.INSERT_MOVIE, [req.body.id, req.body.title, req.body.poster_path])
     .then(() => {
       knex.raw(constants.WATCH, [req.user.id, req.body.id])
       .then(() => res.sendStatus(200))
@@ -257,7 +252,6 @@ app.post('/api/movies', (req, res) => {
     res.sendStatus(403);
   }
 });
-
 
 app.delete('/api/relations/:id', (req, res) => {
   if (req.user) {
@@ -272,7 +266,7 @@ app.delete('/api/relations/:id', (req, res) => {
 
 app.post('/api/relations/:id', (req, res) => {
   if (req.user) {
-    callRaw(constants.FOLLOW, [req.params.id, req.user.id])
+    rawSQL(constants.FOLLOW, [req.params.id, req.user.id])
     .then(data => res.sendStatus(200))
     .catch(err => res.sendStatus(500))
   }
@@ -293,6 +287,88 @@ app.get('/recommendations', (req, res) => {
   }
   else {
     res.redirect('/');
+  }
+})
+
+app.get('/movies', (req, res) => {
+  if (req.user) {
+    var id = req.user.id;
+    getMovies(id, addMe(req.user, initialState()))
+    .then(response => getFollowers(id, response))
+    .then(response => getFollowing(id, response))
+    .then(response => getRecommendations(id, response))
+    .then(response => res.render('state', {initialState: JSON.stringify(response).replace(/</g, '\\u003c')}))
+  }
+  else {
+    res.redirect('/');
+  }
+})
+
+app.get('/followers', (req, res) => {
+  if (req.user) {
+    var id = req.user.id;
+    getMovies(id, addMe(req.user, initialState()))
+    .then(response => getFollowers(id, response))
+    .then(response => getFollowing(id, response))
+    .then(response => getRecommendations(id, response))
+    .then(response => res.render('state', {initialState: JSON.stringify(response).replace(/</g, '\\u003c')}))
+  }
+  else {
+    res.redirect('/');
+  }
+})
+
+app.get('/following', (req, res) => {
+  if (req.user) {
+    var id = req.user.id;
+    getMovies(id, addMe(req.user, initialState()))
+    .then(response => getFollowers(id, response))
+    .then(response => getFollowing(id, response))
+    .then(response => getRecommendations(id, response))
+    .then(response => res.render('state', {initialState: JSON.stringify(response).replace(/</g, '\\u003c')}))
+  }
+  else {
+    res.redirect('/');
+  }
+})
+
+app.get('/user/:username', (req, res) => {
+  if (req.user) {
+    res.redirect('/user/' + req.params.username + '/movies')
+  }
+  else {
+    res.redirect('/');
+  }
+})
+
+app.get('/user/:username/movies', (req, res) => {
+  if (req.user) {
+    var id;
+    knex('user').select('id').where('username', req.params.username)
+    .then(data => {
+      if (data.length == 1) {
+        id = data[0].id
+      } else {
+        res.redirect('/')
+        Promise.reject()
+      }
+    })
+    .then(() => getMovies(id, initialState()))
+    .then(response => getFollowing(id, response))
+    .then(response => getFollowers(id, response))
+    .then(response => {
+      response = Object.assign(response, {currentUser: id});
+      id = req.user.id
+      return response;
+    })
+    .then(response => getMovies(id, addMe(req.user, response)))
+    .then(response => getFollowers(id, response))
+    .then(response => getFollowing(id, response))
+    .then(response => getRecommendations(id, response))
+    .then(response => res.render('state', {initialState: JSON.stringify(response).replace(/</g, '\\u003c')}))
+  }
+  else {
+    res.redirect('/')
   }
 })
 

@@ -16,6 +16,7 @@ export const Following = (props) => {
   }
   return (
     <div className="ui container">
+      <h1>Following</h1>
       <div className="ui list">
         {props.following.map(formatFollowing)}
       </div>

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Followers } from '../presentationals/Followers.jsx';
-import { unfollowUser, followUser } from '../../actions/index.js';
+import { unfollowUser, followUser, setUser } from '../../actions/index.js';
 import { getCurrentUserFollowers, getCurrentUser } from '../../selectors/index.js'
 import { connect } from 'react-redux'
 
 class UserFollowersContainer extends React.Component {
   render() {
     var title = (<h1>{this.props.user && this.props.user.name + "'s Followers"}</h1>)
-    return <Followers followers={this.props.followers} title={title} unfollowUser={this.props.unfollowUser} followUser={this.props.followUser} me={this.props.me}/>;
+    return <Followers followers={this.props.followers} setUser={this.props.setUser} title={title} unfollowUser={this.props.unfollowUser} followUser={this.props.followUser} me={this.props.me}/>;
   }
 }
 

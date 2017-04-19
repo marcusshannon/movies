@@ -6,11 +6,11 @@ import { getFollowers } from '../../selectors/index.js'
 
 class FollowersContainer extends React.Component {
   render() {
-    return <Followers followers={this.props.followers} followUser={this.props.followUser} unfollowUser={this.props.unfollowUser} setUser={this.props.setUser}/>;
+    return <Followers title={(<h1>Followers</h1>)} followers={this.props.followers} followUser={this.props.followUser} unfollowUser={this.props.unfollowUser} setUser={this.props.setUser}/>;
   }
 }
 
-const mapStateToProps = (state) => {
+const mapStateToProps = state => {
   return {
     followers: getFollowers(state)
   }

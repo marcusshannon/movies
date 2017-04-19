@@ -36,6 +36,8 @@ class NavContainer extends React.Component {
         <div className="ui container" style={{marginTop: 10, marginBottom: 10}}>
           {links}
         </div>
+        <div className="ui divider"></div>
+
         {this.props.children}
       </div>
     );

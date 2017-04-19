@@ -26,7 +26,9 @@ export const root = (state = [], action) => {
       return state.set('currentUser', action.id)
     case 'RECEIVE_CURRENT_USER':
       var merged = state.mergeDeep(action.payload)
-      return merged.set('views', merged.get('views').sort((a, b) => Date(a.viewed) < Date(b.viewed)))
+      return merged.set('views', merged.get('views').sort((a, b) => {
+        return a.get('viewed') > b.get('viewed')
+      }))
     default:
       return state
   }
