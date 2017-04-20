@@ -344,7 +344,7 @@ app.get('/user/:username/movies', (req, res) => {
   if (req.user) {
     var id;
     var user;
-    knex('user').select('id').where('username', req.params.username)
+    knex('user').select('*').where('username', req.params.username)
     .then(data => {
       if (data.length == 1) {
         id = data[0].id;
