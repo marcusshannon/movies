@@ -3,7 +3,6 @@ var express = require('express');
 var session = require('express-session');
 var KnexSessionStore = require('connect-session-knex')(session);
 var app = express();
-var _ = require('lodash');
 var passport = require('passport');
 var TwitterStrategy = require('passport-twitter').Strategy;
 var bodyParser = require('body-parser');

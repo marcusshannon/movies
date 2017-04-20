@@ -1,3 +1,4 @@
+//These are like stored procedures
 const GET_FOLLOWING =
 `SELECT
 leader,
