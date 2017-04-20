@@ -343,10 +343,12 @@ app.get('/user/:username', (req, res) => {
 app.get('/user/:username/movies', (req, res) => {
   if (req.user) {
     var id;
+    var user;
     knex('user').select('id').where('username', req.params.username)
     .then(data => {
       if (data.length == 1) {
-        id = data[0].id
+        id = data[0].id;
+        user = data[0];
       } else {
         res.redirect('/')
         Promise.reject()
@@ -357,7 +359,13 @@ app.get('/user/:username/movies', (req, res) => {
     .then(response => getFollowers(id, response))
     .then(response => {
       response = Object.assign(response, {currentUser: id});
-      id = req.user.id
+      response.users[id] = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        image_url: user.image_url,
+      }
+      id = req.user.id;
       return response;
     })
     .then(response => getMovies(id, addMe(req.user, response)))
